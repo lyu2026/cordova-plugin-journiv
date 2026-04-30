@@ -22,7 +22,7 @@ public class PdfExport{
 	}
 
 	// 导出日记到PDF
-	public String export(String path,String start,String end) throws Exception{
+	public String export(String path,String startDate,String endDate) throws Exception{
 		// 设置默认路径
 		if(path==null||path.isEmpty()){
 			File dir=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS);
@@ -35,7 +35,7 @@ public class PdfExport{
 		// 查询日记
 		DBHelper db=new DBHelper(ctx);
 		String where="at >= ? AND at <= ?";
-		List<Entry> list=db.query(where,new String[]{start,end},true);
+		List<Entry> list=db.query(where,new String[]{startDate,endDate},true);
 
 		// 创建PDF文档
 		PdfDocument doc=new PdfDocument();
@@ -115,18 +115,18 @@ public class PdfExport{
 			// 正文 - 自动换行
 			String content=e.content;
 			float maxWidth=pw-80;
-			int start=0;
-			while(start<content.length()){
-				int end=start;
-				while(end<content.length()){
-					float w=contentPaint.measureText(content,start,end+1);
+			int si=0;
+			while(si<content.length()){
+				int ei=si;
+				while(ei<content.length()){
+					float w=contentPaint.measureText(content,si,ei+1);
 					if(w>maxWidth) break;
-					end++;
+					ei++;
 				}
-				if(end==start) end=start+1;
-				canvas.drawText(content,start,end,40,y,contentPaint);
+				if(ei==si) ei=si+1;
+				canvas.drawText(content,si,ei,40,y,contentPaint);
 				y+=18;
-				start=end;
+				si=ei;
 			}
 
 			y+=10;
