@@ -282,7 +282,7 @@ public class Journiv extends CordovaPlugin{
 			String url=args.getString(0);
 			String user=args.getString(1);
 			String pass=args.getString(2);
-			String folder=args.optString(3,"journiv");
+			String folder=args.optString(3,"tyan");
 			sync.setup(url,user,pass,folder);
 			JSONObject r=new JSONObject();
 			r.put("ok",true);
