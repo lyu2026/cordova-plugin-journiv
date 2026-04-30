@@ -10,7 +10,7 @@ public class CryptoUtil{
 	// 加密算法: AES-256-CBC
 	private static final String ALG="AES/CBC/PKCS5Padding";
 	// 密钥 - 32字节，必须正好16/24/32字节
-	private static final String KEY="J0urn1vS3cur3K3y!2024!!@#$%^";
+	private static final String KEY="JournivJournivJournivJourniv12";
 	// 初始化向量 - 16字节
 	private static final String IV="J0urn1vInitV3ct0";
 
