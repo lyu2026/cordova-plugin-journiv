@@ -58,13 +58,12 @@ public class SyncManager{
 				res.put("file",name);
 				ctx.getSharedPreferences("sync",Context.MODE_PRIVATE).edit().putLong("last",System.currentTimeMillis()).apply();
 			}else{
-				// 如果PUT失败，尝试先创建目录再上传
-				try{mkdir(folder);}catch(Exception ex){}
 				ok=put(fullPath,data);
 				if(ok){
 					res.put("ok",true);
 					res.put("file",name);
-				}else{
+					ctx.getSharedPreferences("sync",Context.MODE_PRIVATE).edit().putLong("last",System.currentTimeMillis()).apply();
+			}else{
 					res.put("ok",false);
 					res.put("msg","上传失败");
 				}
@@ -87,12 +86,6 @@ public class SyncManager{
 		int code=c.getResponseCode();
 		c.disconnect();
 		return code==201||code==204||code==200;
-	}
-
-	// 创建文件夹 MKCOL
-	private void mkdir(String path)throws Exception{
-		HttpURLConnection c=conn(path,"MKCOL");
-		c.disconnect();
 	}
 
 	// 下载最新备份
