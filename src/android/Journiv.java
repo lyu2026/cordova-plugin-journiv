@@ -8,6 +8,7 @@ import android.util.Log;
 import org.apache.cordova.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import com.journiv.plugin.models.Entry;
 import net.sqlcipher.database.SQLiteDatabase;
 import java.security.MessageDigest;
@@ -54,48 +55,39 @@ public class Journiv extends CordovaPlugin{
 		try{
 			switch(action){
 				// 日记CRUD
-				case "save":return save(args,cb);
-				case "get":return get(args,cb);
-				case "all":return all(cb);
-				case "update":return update(args,cb);
-				case "remove":return remove(args,cb);
-				
+				case "save":       return save(args,cb);
+				case "get":        return get(args,cb);
+				case "all":        return all(cb);
+				case "update":     return update(args,cb);
+				case "remove":     return remove(args,cb);
 				// 回忆和筛选
-				case "memory":return memory(cb);
-				case "byMood":return byMood(args,cb);
-				case "prompt":return prompt(cb);
-				
+				case "memory":     return memory(cb);
+				case "byMood":     return byMood(args,cb);
+				case "prompt":     return prompt(cb);
 				// 密码
-				case "setPass":return setPass(args,cb);
-				case "checkPass":return checkPass(args,cb);
-				
+				case "setPass":    return setPass(args,cb);
+				case "checkPass":  return checkPass(args,cb);
 				// 图片
-				case "addImg":return addImg(args,cb);
-				case "getImgs":return getImgs(args,cb);
-				
+				case "addImg":     return addImg(args,cb);
+				case "getImgs":    return getImgs(args,cb);
 				// 搜索
-				case "search":return search(args,cb);
-				case "advSearch":return advSearch(args,cb);
-				
+				case "search":     return search(args,cb);
+				case "advSearch":  return advSearch(args,cb);
 				// 同步
-				case "syncSetup":return syncSetup(args,cb);
-				case "syncUp":return syncUp(cb);
-				case "syncDown":return syncDown(cb);
-				case "syncStatus":return syncStatus(cb);
-				
+				case "syncSetup":  return syncSetup(args,cb);
+				case "syncUp":     return syncUp(cb);
+				case "syncDown":   return syncDown(cb);
+				case "syncStatus": return syncStatus(cb);
 				// 提醒
-				case "setRemind":return setRemind(args,cb);
-				case "cancelRemind":return cancelRemind(args,cb);
-				case "allReminds":return allReminds(cb);
-				
+				case "setRemind":    return setRemind(args,cb);
+				case "cancelRemind": return cancelRemind(args,cb);
+				case "allReminds":   return allReminds(cb);
 				// 统计
-				case "stats":return stats(args,cb);
-				case "moodChart":return moodChart(args,cb);
-				case "streak":return streak(cb);
-				
+				case "stats":     return stats(args,cb);
+				case "moodChart": return moodChart(args,cb);
+				case "streak":    return streak(cb);
 				// PDF导出
-				case "exportPdf":return exportPdf(args,cb);
-				
+				case "exportPdf": return exportPdf(args,cb);
 				default:
 					cb.error("未知操作: "+action);
 					return false;
@@ -108,14 +100,12 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 日记CRUD ==========
-	
 	private boolean save(JSONArray args,CallbackContext cb){
 		try{
 			String title=args.getString(0);
 			String content=args.getString(1);
 			String mood=args.getString(2);
 			String tags=args.getString(3);
-			// 加密内容后存储
 			String enc=CryptoUtil.enc(content);
 			long id=db.insert(title,enc,mood,tags);
 			JSONObject r=new JSONObject();
@@ -163,7 +153,7 @@ public class Journiv extends CordovaPlugin{
 	private boolean remove(JSONArray args,CallbackContext cb){
 		try{
 			long id=args.getLong(0);
-			img.removeByDiary(id); // 同时删除关联图片
+			img.removeByDiary(id);
 			db.remove(id);
 			cb.success("删除成功");
 		}catch(Exception e){cb.error(e.getMessage());}
@@ -171,7 +161,6 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 那年今日 ==========
-	
 	private boolean memory(CallbackContext cb){
 		try{
 			Calendar cal=Calendar.getInstance();
@@ -208,7 +197,6 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 密码管理 ==========
-	
 	private boolean setPass(JSONArray args,CallbackContext cb){
 		try{
 			String pwd=args.getString(0);
@@ -232,12 +220,10 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 图片管理 ==========
-	
 	private boolean addImg(JSONArray args,CallbackContext cb){
 		try{
 			long diaryId=args.getLong(0);
 			String b64=args.getString(1);
-			// 去掉Base64前缀
 			if(b64.contains(",")) b64=b64.substring(b64.indexOf(",")+1);
 			String path=img.save(diaryId,b64);
 			db.addImg(diaryId,path);
@@ -266,7 +252,6 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 搜索 ==========
-	
 	private boolean search(JSONArray args,CallbackContext cb){
 		try{
 			String q=args.getString(0);
@@ -294,7 +279,6 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 同步 ==========
-	
 	private boolean syncSetup(JSONArray args,CallbackContext cb){
 		try{
 			String url=args.getString(0);
@@ -338,7 +322,6 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 提醒 ==========
-	
 	private boolean setRemind(JSONArray args,CallbackContext cb){
 		try{
 			String id=args.optString(0,null);
@@ -374,7 +357,6 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 统计 ==========
-	
 	private boolean stats(JSONArray args,CallbackContext cb){
 		cordova.getThreadPool().execute(()->{
 			try{
@@ -404,7 +386,6 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== PDF导出 ==========
-	
 	private boolean exportPdf(JSONArray args,CallbackContext cb){
 		cordova.getThreadPool().execute(()->{
 			try{
@@ -422,13 +403,11 @@ public class Journiv extends CordovaPlugin{
 	}
 
 	// ========== 工具方法 ==========
-	
-	// Entry转JSON
 	private JSONObject toJson(Entry e) throws Exception{
 		JSONObject o=new JSONObject();
 		o.put("id",e.id);
 		o.put("title",e.title);
-		o.put("content",e.content); // 已解密
+		o.put("content",e.content);
 		o.put("mood",e.mood);
 		o.put("tags",e.tags);
 		o.put("imgs",e.imgs);
@@ -437,7 +416,6 @@ public class Journiv extends CordovaPlugin{
 		return o;
 	}
 
-	// SHA256哈希
 	private String hashSha256(String input) throws Exception{
 		MessageDigest md=MessageDigest.getInstance("SHA-256");
 		byte[] hash=md.digest(input.getBytes("UTF-8"));
