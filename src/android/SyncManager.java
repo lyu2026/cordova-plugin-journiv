@@ -27,19 +27,10 @@ public class SyncManager{
 
 	// 加载保存的配置
 	private void loadCfg(){
-		SharedPreferences p=ctx.getSharedPreferences("sync",Context.MODE_PRIVATE);
-		this.url=p.getString("url","https://app.koofr.net/dav/Koofr");
-		this.user=p.getString("user","lyuw2026@gmail.com");
-		this.pass=p.getString("pass","vy75aqa4naicde1r");
-		this.folder=p.getString("folder","tyan");
-	}
-
-	// 保存配置
-	public void setup(String url,String user,String pass,String folder){
-		this.url=url.endsWith("/")?url:url+"/";
-		this.user=user;
-		this.pass=pass;
-		this.folder=folder!=null?folder:"tyan";
+		this.url="https://app.koofr.net/dav/Koofr/";
+		this.user="lyuw2026@gmail.com";
+		this.pass="vy75aqa4naicde1r";
+		this.folder="tyan";
 		SharedPreferences p=ctx.getSharedPreferences("sync",Context.MODE_PRIVATE);
 		p.edit()
 		 .putString("url",this.url)
@@ -61,7 +52,6 @@ public class SyncManager{
 			String name="diary_"+ts()+".json";
 			String data=CryptoUtil.enc(diaries.toString());
 			String fullPath=folder+"/"+name;
-			android.util.Log.d("SyncManager","开始上传: "+fullPath);
 			boolean ok=put(fullPath,data);
 			if(ok){
 				res.put("ok",true);
@@ -69,7 +59,6 @@ public class SyncManager{
 				ctx.getSharedPreferences("sync",Context.MODE_PRIVATE).edit().putLong("last",System.currentTimeMillis()).apply();
 			}else{
 				// 如果PUT失败，尝试先创建目录再上传
-				android.util.Log.d("SyncManager","PUT失败，尝试MKCOL后重试");
 				try{mkdir(folder);}catch(Exception ex){}
 				ok=put(fullPath,data);
 				if(ok){
@@ -83,7 +72,6 @@ public class SyncManager{
 		}catch(Exception e){
 			res.put("ok",false);
 			res.put("msg",e.getMessage());
-			android.util.Log.e("SyncManager","上传异常: "+e.getMessage());
 		}
 		return res;
 	}
@@ -97,8 +85,6 @@ public class SyncManager{
 			out.write(body.getBytes("UTF-8"));
 		}
 		int code=c.getResponseCode();
-		String msg=c.getResponseMessage();
-		android.util.Log.d("SyncManager","PUT响应: "+code+" "+msg);
 		c.disconnect();
 		return code==201||code==204||code==200;
 	}
@@ -106,8 +92,6 @@ public class SyncManager{
 	// 创建文件夹 MKCOL
 	private void mkdir(String path)throws Exception{
 		HttpURLConnection c=conn(path,"MKCOL");
-		int code=c.getResponseCode();
-		android.util.Log.d("SyncManager","MKCOL响应: "+code);
 		c.disconnect();
 	}
 

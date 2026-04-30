@@ -27,7 +27,6 @@ const J={
 	advSearch:function(kw,start,end,mood,tags,o,x){E(o,x,'Journiv','advSearch',[kw,start,end,mood,tags])},
 
 	// WebDAV 同步
-	syncSetup:function(url,user,pass,folder,o,x){E(o,x,'Journiv','syncSetup',[url,user,pass,folder||'journiv'])},
 	syncUp:function(o,x){E(o,x,'Journiv','syncUp',[])},
 	syncDown:function(o,x){E(o,x,'Journiv','syncDown',[])},
 	syncStatus:function(o,x){E(o,x,'Journiv','syncStatus',[])},

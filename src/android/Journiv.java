@@ -65,7 +65,6 @@ public class Journiv extends CordovaPlugin{
 				case "getImgs":    return getImgs(args,cb);
 				case "search":     return search(args,cb);
 				case "advSearch":  return advSearch(args,cb);
-				case "syncSetup":  return syncSetup(args,cb);
 				case "syncUp":     return syncUp(cb);
 				case "syncDown":   return syncDown(cb);
 				case "syncStatus": return syncStatus(cb);
@@ -81,7 +80,6 @@ public class Journiv extends CordovaPlugin{
 					return false;
 			}
 		}catch(Exception e){
-			Log.e(TAG,"执行失败: "+action,e);
 			cb.error("错误: "+e.getMessage());
 			return false;
 		}
@@ -257,20 +255,6 @@ public class Journiv extends CordovaPlugin{
 			JSONArray arr=new JSONArray();
 			for(Entry e:list) arr.put(toJson(e));
 			cb.success(arr);
-		}catch(Exception e){cb.error(e.getMessage());}
-		return true;
-	}
-
-	private boolean syncSetup(JSONArray args,CallbackContext cb){
-		try{
-			String url=args.getString(0);
-			String user=args.getString(1);
-			String pass=args.getString(2);
-			String folder=args.optString(3,"journiv");
-			sync.setup(url,user,pass,folder);
-			JSONObject r=new JSONObject();
-			r.put("ok",true);
-			cb.success(r);
 		}catch(Exception e){cb.error(e.getMessage());}
 		return true;
 	}
