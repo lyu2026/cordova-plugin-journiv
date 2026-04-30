@@ -58,23 +58,57 @@ public class SyncManager{
 	public JSONObject up(JSONArray diaries)throws Exception{
 		JSONObject res=new JSONObject();
 		try{
-			// 不再显式创建文件夹，直接上传，Koofr 会自动创建路径
 			String name="diary_"+ts()+".json";
 			String data=CryptoUtil.enc(diaries.toString());
-			boolean ok=put(folder+"/"+name,data);
+			String fullPath=folder+"/"+name;
+			android.util.Log.d("SyncManager","开始上传: "+fullPath);
+			boolean ok=put(fullPath,data);
 			if(ok){
 				res.put("ok",true);
 				res.put("file",name);
 				ctx.getSharedPreferences("sync",Context.MODE_PRIVATE).edit().putLong("last",System.currentTimeMillis()).apply();
 			}else{
-				res.put("ok",false);
-				res.put("msg","上传失败");
+				// 如果PUT失败，尝试先创建目录再上传
+				android.util.Log.d("SyncManager","PUT失败，尝试MKCOL后重试");
+				try{mkdir(folder);}catch(Exception ex){}
+				ok=put(fullPath,data);
+				if(ok){
+					res.put("ok",true);
+					res.put("file",name);
+				}else{
+					res.put("ok",false);
+					res.put("msg","上传失败");
+				}
 			}
 		}catch(Exception e){
 			res.put("ok",false);
 			res.put("msg",e.getMessage());
+			android.util.Log.e("SyncManager","上传异常: "+e.getMessage());
 		}
 		return res;
+	}
+
+	// 上传文件 PUT
+	private boolean put(String path,String body)throws Exception{
+		HttpURLConnection c=conn(path,"PUT");
+		c.setDoOutput(true);
+		c.setRequestProperty("Content-Type","application/octet-stream");
+		try(OutputStream out=c.getOutputStream()){
+			out.write(body.getBytes("UTF-8"));
+		}
+		int code=c.getResponseCode();
+		String msg=c.getResponseMessage();
+		android.util.Log.d("SyncManager","PUT响应: "+code+" "+msg);
+		c.disconnect();
+		return code==201||code==204||code==200;
+	}
+
+	// 创建文件夹 MKCOL
+	private void mkdir(String path)throws Exception{
+		HttpURLConnection c=conn(path,"MKCOL");
+		int code=c.getResponseCode();
+		android.util.Log.d("SyncManager","MKCOL响应: "+code);
+		c.disconnect();
 	}
 
 	// 下载最新备份
@@ -133,19 +167,6 @@ public class SyncManager{
 		return c;
 	}
 
-	// 上传文件 PUT
-	private boolean put(String path,String body)throws Exception{
-		HttpURLConnection c=conn(path,"PUT");
-		c.setDoOutput(true);
-		c.setRequestProperty("Content-Type","application/octet-stream");
-		try(OutputStream out=c.getOutputStream()){
-			out.write(body.getBytes("UTF-8"));
-		}
-		int code=c.getResponseCode();
-		c.disconnect();
-		return code==201||code==204;
-	}
-
 	// 下载文件 GET
 	private String get(String path)throws Exception{
 		HttpURLConnection c=conn(path,"GET");
@@ -154,17 +175,6 @@ public class SyncManager{
 		String r=read(c.getInputStream());
 		c.disconnect();
 		return r;
-	}
-
-	// 创建文件夹 MKCOL - 改为尝试创建，失败也不中断
-	private void mkdir(String path)throws Exception{
-		HttpURLConnection c=conn(path,"MKCOL");
-		int code=c.getResponseCode();
-		c.disconnect();
-		// 201=成功 405=已存在，其他错误不抛异常，因为有些服务器不支持 MKCOL
-		if(code!=201&&code!=405){
-			// 忽略错误，PUT 时会自动创建父目录
-		}
 	}
 
 	// 列出文件 PROPFIND
