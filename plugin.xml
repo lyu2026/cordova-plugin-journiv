@@ -34,13 +34,13 @@
 
 		<!-- Cordova Feature 注册 -->
 		<config-file target="res/xml/config.xml" parent="/*">
-			<feature name="JournivPlugin">
-				<param name="android-package" value="com.journiv.plugin.JournivPlugin" />
+			<feature name="Journiv">
+				<param name="android-package" value="com.journiv.plugin.Journiv" />
 			</feature>
 		</config-file>
 
 		<!-- Java 源文件 -->
-		<source-file src="src/android/JournivPlugin.java" target-dir="src/com/journiv/plugin" />
+		<source-file src="src/android/Journiv.java" target-dir="src/com/journiv/plugin" />
 		<source-file src="src/android/DBHelper.java" target-dir="src/com/journiv/plugin" />
 		<source-file src="src/android/CryptoUtil.java" target-dir="src/com/journiv/plugin" />
 		<source-file src="src/android/ImgManager.java" target-dir="src/com/journiv/plugin" />

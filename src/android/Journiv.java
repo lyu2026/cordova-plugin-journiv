@@ -14,8 +14,8 @@ import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-public class JournivPlugin extends CordovaPlugin{
-	private static final String TAG="JournivPlugin";
+public class Journiv extends CordovaPlugin{
+	private static final String TAG="Journiv";
 	private DBHelper db;
 	private ImgManager img;
 	private SyncManager sync;
