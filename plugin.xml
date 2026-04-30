@@ -6,7 +6,7 @@
 	<license>MIT</license>
 	<keywords>diary,journal,encrypted,webdav,private</keywords>
 
-	<dependency id="cordova-sqlite-storage" version="^6.0.0"/>
+	<dependency id="cordova-sqlite-storage" version="*"/>
 
 	<js-module src="www/Journiv.js" name="Journiv">
 		<clobbers target="Journiv"/>
