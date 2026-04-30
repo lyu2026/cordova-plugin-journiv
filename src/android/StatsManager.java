@@ -4,6 +4,7 @@ package com.journiv.plugin;
 import android.content.Context;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import com.journiv.plugin.models.Entry;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -64,7 +65,7 @@ public class StatsManager{
 				}
 				arr.put(d);
 			}
-		}catch(Exception e){}
+		}catch(JSONException e){}
 		return arr;
 	}
 
@@ -93,8 +94,8 @@ public class StatsManager{
 			}
 			s.put("streak",streak);
 			s.put("total",all.size());
-		}catch(Exception e){
-			s.put("streak",0);
+		}catch(JSONException e){
+			try{s.put("streak",0);}catch(JSONException ex){}
 		}
 		return s;
 	}
@@ -111,7 +112,7 @@ public class StatsManager{
 			for(Map.Entry<String,Integer> kv:map.entrySet()){
 				m.put(kv.getKey(),kv.getValue());
 			}
-		}catch(Exception ex){}
+		}catch(JSONException ex){}
 		return m;
 	}
 
@@ -130,7 +131,7 @@ public class StatsManager{
 			for(Map.Entry<String,Integer> kv:map.entrySet()){
 				t.put(kv.getKey(),kv.getValue());
 			}
-		}catch(Exception ex){}
+		}catch(JSONException ex){}
 		return t;
 	}
 
