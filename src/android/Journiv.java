@@ -10,7 +10,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 import com.journiv.plugin.models.Entry;
-import net.sqlcipher.database.SQLiteDatabase;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -39,7 +38,6 @@ public class Journiv extends CordovaPlugin{
 	@Override
 	public void initialize(CordovaInterface cordova,CordovaWebView webView){
 		super.initialize(cordova,webView);
-		SQLiteDatabase.loadLibs(cordova.getContext());
 		Context ctx=cordova.getContext();
 		db=new DBHelper(ctx);
 		img=new ImgManager(ctx);

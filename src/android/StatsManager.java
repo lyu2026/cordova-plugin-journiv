@@ -19,40 +19,40 @@ public class StatsManager{
 	// 综合统计
 	public JSONObject stats(String start,String end) throws Exception{
 		JSONObject s=new JSONObject();
-		
+
 		// 查询时间范围内的日记
 		String where="at >= ? AND at <= ?";
 		List<Entry> list=db.query(where,new String[]{start,end},false);
-		
+
 		// 统计总数
 		s.put("total",list.size());
 		s.put("days",getDays(list)); // 有写日记的天数
-		
+
 		// 统计情绪分布
 		s.put("mood",moodCount(list));
-		
+
 		// 统计标签
 		s.put("tags",tagCount(list));
-		
+
 		// 平均字数
 		s.put("avgLen",avgLength(list));
-		
+
 		return s;
 	}
 
 	// 情绪时间线
 	public JSONArray moodTimeline(int days){
 		JSONArray arr=new JSONArray();
-		Calendar cal=Calendar.getInstance();
 		try{
+			Calendar today=Calendar.getInstance();
 			for(int i=days-1;i>=0;i--){
+				Calendar cal=(Calendar)today.clone();
 				cal.add(Calendar.DAY_OF_YEAR,-i);
 				String date=sdf.format(cal.getTime());
-				cal.add(Calendar.DAY_OF_YEAR,i); // 恢复
-				
+
 				String where="at LIKE ?";
 				List<Entry> list=db.query(where,new String[]{date+"%"},true);
-				
+
 				JSONObject d=new JSONObject();
 				d.put("date",date);
 				if(list.isEmpty()){
@@ -78,7 +78,7 @@ public class StatsManager{
 				long ts=Long.parseLong(e.created);
 				days.add(sdf.format(new Date(ts)));
 			}
-			
+
 			// 从今天往回数连续天数
 			Calendar cal=Calendar.getInstance();
 			int streak=0;
