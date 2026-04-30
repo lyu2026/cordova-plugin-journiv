@@ -1,311 +1,230 @@
-// 数据库助手 - 使用 cordova-sqlite-storage 插件
+// 数据库助手 - 使用Android原生SQLite，内容用AES加密
 package com.journiv.plugin;
 
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
 import com.journiv.plugin.models.Entry;
 import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.JSONException;
 import java.util.ArrayList;
 import java.util.List;
-import io.sqlc.SQLiteConnectorDatabase;
-import io.sqlc.SQLitePlugin;
 
-public class DBHelper{
+public class DBHelper extends SQLiteOpenHelper{
 	private static final String DB="journiv.db";
+	private static final int VER=1;
 	private static final String T="diaries";
-	private Context ctx;
+	private static final String C_ID="id";
+	private static final String C_TITLE="title";
+	private static final String C_CONTENT="content";
+	private static final String C_MOOD="mood";
+	private static final String C_TAGS="tags";
+	private static final String C_IMGS="imgs";
+	private static final String C_AT="at";
 
 	public DBHelper(Context ctx){
-		this.ctx=ctx;
-		initDB();
+		super(ctx,DB,null,VER);
 	}
 
-	// 初始化数据库和表
-	private void initDB(){
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		// 创建日记表
-		db.executeSql("CREATE TABLE IF NOT EXISTS "+T+"("
-				+"id INTEGER PRIMARY KEY AUTOINCREMENT,"
-				+"title TEXT,"
-				+"content TEXT,"
-				+"mood TEXT,"
-				+"tags TEXT,"
-				+"imgs TEXT DEFAULT '[]',"
-				+"at TEXT"
-				+")",new JSONArray(),null,null);
+	@Override
+	public void onCreate(SQLiteDatabase db){
+		db.execSQL("CREATE TABLE "+T+"("
+				+C_ID+" INTEGER PRIMARY KEY AUTOINCREMENT,"
+				+C_TITLE+" TEXT,"
+				+C_CONTENT+" TEXT,"
+				+C_MOOD+" TEXT,"
+				+C_TAGS+" TEXT,"
+				+C_IMGS+" TEXT DEFAULT '[]',"
+				+C_AT+" TEXT"
+				+")");
+	}
+
+	@Override
+	public void onUpgrade(SQLiteDatabase db,int oldVer,int newVer){
+		db.execSQL("DROP TABLE IF EXISTS "+T);
+		onCreate(db);
+	}
+
+	// 辅助方法：将一行数据转为Entry对象
+	private Entry cursorToEntry(Cursor c,boolean decrypt){
+		Entry e=new Entry();
+		e.id=c.getLong(0);
+		e.title=c.getString(1);
+		String raw=c.getString(2);
+		if(decrypt){
+			try{e.content=CryptoUtil.dec(raw);}
+			catch(Exception ex){e.content=raw;}
+		}else{
+			e.content=raw;
+		}
+		e.mood=c.getString(3);
+		e.tags=c.getString(4);
+		e.imgs=c.getString(5);
+		e.created=c.getString(6);
+		e.updated=c.getString(6);
+		return e;
 	}
 
 	// 插入日记
 	public long insert(String title,String content,String mood,String tags){
-		final long[] result={-1};
-		String sql="INSERT INTO "+T+"(title,content,mood,tags,at) VALUES(?,?,?,?,?)";
-		JSONArray params=new JSONArray();
-		params.put(title);
-		params.put(content);
-		params.put(mood);
-		params.put(tags);
-		params.put(String.valueOf(System.currentTimeMillis()));
-		
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql,params,
-			(rs)->{
-				result[0]=rs.getInsertId();
-			},
-			(err)->{}
-		);
-		return result[0];
+		SQLiteDatabase db=getWritableDatabase();
+		ContentValues v=new ContentValues();
+		String ts=String.valueOf(System.currentTimeMillis());
+		v.put(C_TITLE,title);
+		v.put(C_CONTENT,content);
+		v.put(C_MOOD,mood);
+		v.put(C_TAGS,tags);
+		v.put(C_IMGS,"[]");
+		v.put(C_AT,ts);
+		long id=db.insert(T,null,v);
+		db.close();
+		return id;
+	}
+
+	// 查询单条日记
+	public Entry get(long id){
+		SQLiteDatabase db=getReadableDatabase();
+		Cursor c=db.query(T,null,C_ID+"=?",new String[]{String.valueOf(id)},null,null,null);
+		Entry e=null;
+		if(c.moveToFirst()) e=cursorToEntry(c,true);
+		c.close();
+		db.close();
+		return e;
 	}
 
 	// 查询所有日记
 	public List<Entry> all(){
 		List<Entry> list=new ArrayList<>();
-		String sql="SELECT * FROM "+T+" ORDER BY at DESC";
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql,new JSONArray(),
-			(rs)->{
-				for(int i=0;i<rs.getRows().length();i++){
-					try{
-						JSONObject row=rs.getRows().getJSONObject(i);
-						Entry e=new Entry();
-						e.id=row.getLong("id");
-						e.title=row.getString("title");
-						try{e.content=CryptoUtil.dec(row.getString("content"));}
-						catch(Exception ex){e.content=row.getString("content");}
-						e.mood=row.getString("mood");
-						e.tags=row.getString("tags");
-						e.imgs=row.optString("imgs","[]");
-						e.created=row.getString("at");
-						e.updated=row.getString("at");
-						list.add(e);
-					}catch(Exception ex){}
-				}
-			},
-			(err)->{}
-		);
+		SQLiteDatabase db=getReadableDatabase();
+		Cursor c=db.rawQuery("SELECT * FROM "+T+" ORDER BY "+C_AT+" DESC",null);
+		if(c.moveToFirst()){
+			do{list.add(cursorToEntry(c,true));}while(c.moveToNext());
+		}
+		c.close();
+		db.close();
 		return list;
 	}
 
 	// 按条件查询
-	public List<Entry> query(String where,String[] whereArgs,boolean decrypt){
+	public List<Entry> query(String where,String[] args,boolean decrypt){
 		List<Entry> list=new ArrayList<>();
-		String sql="SELECT * FROM "+T+" WHERE "+where+" ORDER BY at DESC";
-		JSONArray params=new JSONArray();
-		for(String arg:whereArgs) params.put(arg);
-		
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql,params,
-			(rs)->{
-				for(int i=0;i<rs.getRows().length();i++){
-					try{
-						JSONObject row=rs.getRows().getJSONObject(i);
-						Entry e=new Entry();
-						e.id=row.getLong("id");
-						e.title=row.getString("title");
-						String raw=row.getString("content");
-						if(decrypt){
-							try{e.content=CryptoUtil.dec(raw);}
-							catch(Exception ex){e.content=raw;}
-						}else{
-							e.content=raw;
-						}
-						e.mood=row.getString("mood");
-						e.tags=row.getString("tags");
-						e.imgs=row.optString("imgs","[]");
-						e.created=row.getString("at");
-						e.updated=row.getString("at");
-						list.add(e);
-					}catch(Exception ex){}
-				}
-			},
-			(err)->{}
-		);
+		SQLiteDatabase db=getReadableDatabase();
+		Cursor c=db.query(T,null,where,args,null,null,C_AT+" DESC");
+		if(c.moveToFirst()){
+			do{list.add(cursorToEntry(c,decrypt));}while(c.moveToNext());
+		}
+		c.close();
+		db.close();
 		return list;
 	}
 
 	// 更新日记
 	public void update(long id,String title,String content,String mood,String tags){
-		String sql="UPDATE "+T+" SET title=?,content=?,mood=?,tags=?,at=? WHERE id=?";
-		JSONArray params=new JSONArray();
-		params.put(title);
-		params.put(content);
-		params.put(mood);
-		params.put(tags);
-		params.put(String.valueOf(System.currentTimeMillis()));
-		params.put(id);
-		
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql,params,null,null);
+		SQLiteDatabase db=getWritableDatabase();
+		ContentValues v=new ContentValues();
+		v.put(C_TITLE,title);
+		v.put(C_CONTENT,content);
+		v.put(C_MOOD,mood);
+		v.put(C_TAGS,tags);
+		v.put(C_AT,String.valueOf(System.currentTimeMillis()));
+		db.update(T,v,C_ID+"=?",new String[]{String.valueOf(id)});
+		db.close();
 	}
 
 	// 删除日记
 	public void remove(long id){
-		String sql="DELETE FROM "+T+" WHERE id=?";
-		JSONArray params=new JSONArray();
-		params.put(id);
-		
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql,params,null,null);
+		SQLiteDatabase db=getWritableDatabase();
+		db.delete(T,C_ID+"=?",new String[]{String.valueOf(id)});
+		db.close();
 	}
 
-	// 获取单条日记
-	public Entry get(long id){
-		final Entry[] result={null};
-		String sql="SELECT * FROM "+T+" WHERE id=?";
-		JSONArray params=new JSONArray();
-		params.put(id);
-		
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql,params,
-			(rs)->{
-				if(rs.getRows().length()>0){
-					try{
-						JSONObject row=rs.getRows().getJSONObject(0);
-						Entry e=new Entry();
-						e.id=row.getLong("id");
-						e.title=row.getString("title");
-						try{e.content=CryptoUtil.dec(row.getString("content"));}
-						catch(Exception ex){e.content=row.getString("content");}
-						e.mood=row.getString("mood");
-						e.tags=row.getString("tags");
-						e.imgs=row.optString("imgs","[]");
-						e.created=row.getString("at");
-						e.updated=row.getString("at");
-						result[0]=e;
-					}catch(Exception ex){}
-				}
-			},
-			(err)->{}
-		);
-		return result[0];
+	// 获取日记数量
+	public int count(){
+		SQLiteDatabase db=getReadableDatabase();
+		Cursor c=db.rawQuery("SELECT COUNT(*) FROM "+T,null);
+		int n=0;
+		if(c.moveToFirst()) n=c.getInt(0);
+		c.close();
+		db.close();
+		return n;
 	}
 
-	// 全文搜索（简化版，用 LIKE）
+	// 全文搜索
 	public List<Entry> search(String q){
 		List<Entry> list=new ArrayList<>();
-		String sql="SELECT * FROM "+T+" WHERE title LIKE ? OR tags LIKE ? ORDER BY at DESC";
-		String like="%"+q+"%";
-		JSONArray params=new JSONArray();
-		params.put(like);
-		params.put(like);
-		
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql,params,
-			(rs)->{
-				for(int i=0;i<rs.getRows().length();i++){
-					try{
-						JSONObject row=rs.getRows().getJSONObject(i);
-						Entry e=new Entry();
-						e.id=row.getLong("id");
-						e.title=row.getString("title");
-						try{e.content=CryptoUtil.dec(row.getString("content"));}
-						catch(Exception ex){e.content=row.getString("content");}
-						e.mood=row.getString("mood");
-						e.tags=row.getString("tags");
-						e.imgs=row.optString("imgs","[]");
-						e.created=row.getString("at");
-						e.updated=row.getString("at");
-						list.add(e);
-					}catch(Exception ex){}
-				}
-			},
-			(err)->{}
-		);
+		SQLiteDatabase db=getReadableDatabase();
+		String sql="SELECT * FROM "+T+" WHERE "+C_TITLE+" LIKE ? OR "+C_TAGS+" LIKE ? ORDER BY "+C_AT+" DESC";
+		String p="%"+q+"%";
+		Cursor c=db.rawQuery(sql,new String[]{p,p});
+		if(c.moveToFirst()){
+			do{list.add(cursorToEntry(c,true));}while(c.moveToNext());
+		}
+		c.close();
+		db.close();
 		return list;
 	}
 
 	// 高级组合搜索
 	public List<Entry> advSearch(String kw,String start,String end,String mood,String tags){
 		List<Entry> list=new ArrayList<>();
+		SQLiteDatabase db=getReadableDatabase();
 		StringBuilder sql=new StringBuilder("SELECT * FROM "+T+" WHERE 1=1");
-		JSONArray params=new JSONArray();
-		
+		List<String> args=new ArrayList<>();
 		if(kw!=null&&!kw.isEmpty()){
-			sql.append(" AND (title LIKE ? OR tags LIKE ?)");
+			sql.append(" AND ("+C_TITLE+" LIKE ? OR "+C_TAGS+" LIKE ?)");
 			String p="%"+kw+"%";
-			params.put(p);
-			params.put(p);
+			args.add(p);
+			args.add(p);
 		}
 		if(start!=null&&!start.isEmpty()){
-			sql.append(" AND at >= ?");
-			params.put(start);
+			sql.append(" AND "+C_AT+" >= ?");
+			args.add(start);
 		}
 		if(end!=null&&!end.isEmpty()){
-			sql.append(" AND at <= ?");
-			params.put(end);
+			sql.append(" AND "+C_AT+" <= ?");
+			args.add(end);
 		}
 		if(mood!=null&&!mood.isEmpty()){
-			sql.append(" AND mood = ?");
-			params.put(mood);
+			sql.append(" AND "+C_MOOD+" = ?");
+			args.add(mood);
 		}
 		if(tags!=null&&!tags.isEmpty()){
 			String[] ts=tags.split(",");
 			sql.append(" AND (");
 			for(int i=0;i<ts.length;i++){
 				if(i>0) sql.append(" OR ");
-				sql.append("tags LIKE ?");
-				params.put("%"+ts[i].trim()+"%");
+				sql.append(C_TAGS+" LIKE ?");
+				args.add("%"+ts[i].trim()+"%");
 			}
 			sql.append(")");
 		}
-		sql.append(" ORDER BY at DESC");
-		
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql.toString(),params,
-			(rs)->{
-				for(int i=0;i<rs.getRows().length();i++){
-					try{
-						JSONObject row=rs.getRows().getJSONObject(i);
-						Entry e=new Entry();
-						e.id=row.getLong("id");
-						e.title=row.getString("title");
-						try{e.content=CryptoUtil.dec(row.getString("content"));}
-						catch(Exception ex){e.content=row.getString("content");}
-						e.mood=row.getString("mood");
-						e.tags=row.getString("tags");
-						e.imgs=row.optString("imgs","[]");
-						e.created=row.getString("at");
-						e.updated=row.getString("at");
-						list.add(e);
-					}catch(Exception ex){}
-				}
-			},
-			(err)->{}
-		);
+		sql.append(" ORDER BY "+C_AT+" DESC");
+		Cursor c=db.rawQuery(sql.toString(),args.toArray(new String[0]));
+		if(c.moveToFirst()){
+			do{list.add(cursorToEntry(c,true));}while(c.moveToNext());
+		}
+		c.close();
+		db.close();
 		return list;
 	}
 
 	// 添加图片路径
 	public void addImg(long diaryId,String path){
-		Entry e=get(diaryId);
-		if(e==null) return;
+		SQLiteDatabase db=getWritableDatabase();
+		Cursor c=db.query(T,new String[]{C_IMGS},C_ID+"=?",new String[]{String.valueOf(diaryId)},null,null,null);
+		String json="[]";
+		if(c.moveToFirst()) json=c.getString(0);
+		c.close();
 		try{
-			JSONArray arr=new JSONArray(e.imgs);
+			JSONArray arr=new JSONArray(json);
 			arr.put(path);
-			String sql="UPDATE "+T+" SET imgs=?,at=? WHERE id=?";
-			JSONArray params=new JSONArray();
-			params.put(arr.toString());
-			params.put(String.valueOf(System.currentTimeMillis()));
-			params.put(diaryId);
-			SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-			db.executeSql(sql,params,null,null);
-		}catch(Exception ex){}
-	}
-
-	// 获取日记数量
-	public int count(){
-		final int[] result={0};
-		String sql="SELECT COUNT(*) as c FROM "+T;
-		SQLitePlugin db=new SQLitePlugin(ctx,DB,null,1);
-		db.executeSql(sql,new JSONArray(),
-			(rs)->{
-				try{
-					if(rs.getRows().length()>0){
-						result[0]=rs.getRows().getJSONObject(0).getInt("c");
-					}
-				}catch(Exception ex){}
-			},
-			(err)->{}
-		);
-		return result[0];
+			ContentValues v=new ContentValues();
+			v.put(C_IMGS,arr.toString());
+			v.put(C_AT,String.valueOf(System.currentTimeMillis()));
+			db.update(T,v,C_ID+"=?",new String[]{String.valueOf(diaryId)});
+		}catch(JSONException e){}
+		db.close();
 	}
 }

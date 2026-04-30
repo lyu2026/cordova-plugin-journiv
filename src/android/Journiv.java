@@ -26,7 +26,6 @@ public class Journiv extends CordovaPlugin{
 	private static final String PREF="journiv_pref";
 	private static final String KEY_HASH="pwd_hash";
 
-	// 写作提示
 	private static final String[] PROMPTS={
 		"今天最让你感恩的三件事是什么？",
 		"如果可以和十年前的自己对话，你会说什么？",
@@ -52,39 +51,30 @@ public class Journiv extends CordovaPlugin{
 	public boolean execute(String action,JSONArray args,CallbackContext cb) throws JSONException{
 		try{
 			switch(action){
-				// 日记CRUD
 				case "save":       return save(args,cb);
 				case "get":        return get(args,cb);
 				case "all":        return all(cb);
 				case "update":     return update(args,cb);
 				case "remove":     return remove(args,cb);
-				// 回忆和筛选
 				case "memory":     return memory(cb);
 				case "byMood":     return byMood(args,cb);
 				case "prompt":     return prompt(cb);
-				// 密码
 				case "setPass":    return setPass(args,cb);
 				case "checkPass":  return checkPass(args,cb);
-				// 图片
 				case "addImg":     return addImg(args,cb);
 				case "getImgs":    return getImgs(args,cb);
-				// 搜索
 				case "search":     return search(args,cb);
 				case "advSearch":  return advSearch(args,cb);
-				// 同步
 				case "syncSetup":  return syncSetup(args,cb);
 				case "syncUp":     return syncUp(cb);
 				case "syncDown":   return syncDown(cb);
 				case "syncStatus": return syncStatus(cb);
-				// 提醒
 				case "setRemind":    return setRemind(args,cb);
 				case "cancelRemind": return cancelRemind(args,cb);
 				case "allReminds":   return allReminds(cb);
-				// 统计
 				case "stats":     return stats(args,cb);
 				case "moodChart": return moodChart(args,cb);
 				case "streak":    return streak(cb);
-				// PDF导出
 				case "exportPdf": return exportPdf(args,cb);
 				default:
 					cb.error("未知操作: "+action);
@@ -97,7 +87,6 @@ public class Journiv extends CordovaPlugin{
 		}
 	}
 
-	// ========== 日记CRUD ==========
 	private boolean save(JSONArray args,CallbackContext cb){
 		try{
 			String title=args.getString(0);
@@ -158,7 +147,6 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== 那年今日 ==========
 	private boolean memory(CallbackContext cb){
 		try{
 			Calendar cal=Calendar.getInstance();
@@ -194,7 +182,6 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== 密码管理 ==========
 	private boolean setPass(JSONArray args,CallbackContext cb){
 		try{
 			String pwd=args.getString(0);
@@ -217,7 +204,6 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== 图片管理 ==========
 	private boolean addImg(JSONArray args,CallbackContext cb){
 		try{
 			long diaryId=args.getLong(0);
@@ -249,7 +235,6 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== 搜索 ==========
 	private boolean search(JSONArray args,CallbackContext cb){
 		try{
 			String q=args.getString(0);
@@ -276,13 +261,12 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== 同步 ==========
 	private boolean syncSetup(JSONArray args,CallbackContext cb){
 		try{
 			String url=args.getString(0);
 			String user=args.getString(1);
 			String pass=args.getString(2);
-			String folder=args.optString(3,"tyan");
+			String folder=args.optString(3,"journiv");
 			sync.setup(url,user,pass,folder);
 			JSONObject r=new JSONObject();
 			r.put("ok",true);
@@ -319,7 +303,6 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== 提醒 ==========
 	private boolean setRemind(JSONArray args,CallbackContext cb){
 		try{
 			String id=args.optString(0,null);
@@ -354,7 +337,6 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== 统计 ==========
 	private boolean stats(JSONArray args,CallbackContext cb){
 		cordova.getThreadPool().execute(()->{
 			try{
@@ -383,7 +365,6 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== PDF导出 ==========
 	private boolean exportPdf(JSONArray args,CallbackContext cb){
 		cordova.getThreadPool().execute(()->{
 			try{
@@ -400,7 +381,6 @@ public class Journiv extends CordovaPlugin{
 		return true;
 	}
 
-	// ========== 工具方法 ==========
 	private JSONObject toJson(Entry e) throws Exception{
 		JSONObject o=new JSONObject();
 		o.put("id",e.id);
