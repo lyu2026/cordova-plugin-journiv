@@ -9,10 +9,10 @@ import javax.crypto.spec.SecretKeySpec;
 public class CryptoUtil{
 	// 加密算法: AES-256-CBC
 	private static final String ALG="AES/CBC/PKCS5Padding";
-	// 密钥 - 生产环境应使用Android Keystore动态生成
-	private static final String KEY="JournivSecretKey2024!@#$%^&*()";
-	// 初始化向量
-	private static final String IV="JournivInitVector";
+	// 密钥 - 32字节，必须正好16/24/32字节
+	private static final String KEY="JournivSecretKey2024!!@#$%^&"; // 32字节
+	// 初始化向量 - 16字节
+	private static final String IV="JournivInitVecto"; // 16字节
 
 	// 加密明文 -> Base64密文
 	public static String enc(String text)throws Exception{

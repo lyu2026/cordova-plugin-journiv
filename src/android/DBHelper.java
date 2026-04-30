@@ -14,7 +14,7 @@ public class DBHelper extends SQLiteOpenHelper{
 	// 数据库常量
 	private static final String DB="journiv.db"; // 数据库文件名
 	private static final int VER=1; // 数据库版本
-	private static final String PWD="975310"; // 数据库密码
+	private static final String PWD="JournivDbPassword2026!!"; // 数据库密码
 
 	// 表名
 	private static final String T="diaries"; // 日记主表
