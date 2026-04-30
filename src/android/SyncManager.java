@@ -58,15 +58,13 @@ public class SyncManager{
 	public JSONObject up(JSONArray diaries)throws Exception{
 		JSONObject res=new JSONObject();
 		try{
-			mkdir(folder); // 确保备份文件夹存在
+			// 不再显式创建文件夹，直接上传，Koofr 会自动创建路径
 			String name="diary_"+ts()+".json";
-			// 加密后上传
 			String data=CryptoUtil.enc(diaries.toString());
 			boolean ok=put(folder+"/"+name,data);
 			if(ok){
 				res.put("ok",true);
 				res.put("file",name);
-				// 记录同步时间
 				ctx.getSharedPreferences("sync",Context.MODE_PRIVATE).edit().putLong("last",System.currentTimeMillis()).apply();
 			}else{
 				res.put("ok",false);
@@ -158,13 +156,15 @@ public class SyncManager{
 		return r;
 	}
 
-	// 创建文件夹 MKCOL
+	// 创建文件夹 MKCOL - 改为尝试创建，失败也不中断
 	private void mkdir(String path)throws Exception{
 		HttpURLConnection c=conn(path,"MKCOL");
 		int code=c.getResponseCode();
 		c.disconnect();
-		// 201=成功 405=已存在
-		if(code!=201&&code!=405) throw new IOException("创建文件夹失败: "+code);
+		// 201=成功 405=已存在，其他错误不抛异常，因为有些服务器不支持 MKCOL
+		if(code!=201&&code!=405){
+			// 忽略错误，PUT 时会自动创建父目录
+		}
 	}
 
 	// 列出文件 PROPFIND
