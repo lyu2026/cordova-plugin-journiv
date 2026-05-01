@@ -1,7 +1,6 @@
 package com.j.plugin;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.util.Base64;
 import org.json.*;
 import java.io.*;
@@ -12,15 +11,12 @@ import javax.net.ssl.*;
 
 public class S{
 	private String U="https://app.koofr.net/dav/Koofr/",M="lyuw2026@gmail.com",E="vy75aqa4naicde1r",X="tyan";
+	private static final String L="list.txt";
 	private Context C;
 
 	S(Context c){this.C=c;}
 
 	String getUrl(){return U;}
-
-	private void addFileLog(String n){SharedPreferences p=C.getSharedPreferences("slog",Context.MODE_PRIVATE);JSONArray a=getFileLog();a.put(n);p.edit().putString("fl",a.toString()).apply();}
-	private JSONArray getFileLog(){SharedPreferences p=C.getSharedPreferences("slog",Context.MODE_PRIVATE);try{return new JSONArray(p.getString("fl","[]"));}catch(Exception e){return new JSONArray();}}
-	private void clearFileLog(){C.getSharedPreferences("slog",Context.MODE_PRIVATE).edit().putString("fl","[]").apply();}
 
 	private String req(String P,String m,String D)throws Exception{
 		HttpURLConnection c;URL u=new URL(U+P);
@@ -33,41 +29,66 @@ public class S{
 		c.disconnect();throw new IOException(x+" "+c.getResponseMessage());
 	}
 
+	private Map<Long,String> loadList()throws Exception{
+		Map<Long,String> m=new LinkedHashMap<>();
+		try{String t=req(X+"/"+L,"GET",null).trim();if(!t.isEmpty())for(String s:t.split(" ")){String[] p=s.split(":");if(p.length==2)m.put(Long.parseLong(p[0]),p[1]);}}catch(Exception e){}
+		return m;
+	}
+
+	private void saveList(Map<Long,String> m)throws Exception{
+		StringBuilder s=new StringBuilder();
+		for(Map.Entry<Long,String> e:m.entrySet()){if(s.length()>0)s.append(" ");s.append(e.getKey()).append(":").append(e.getValue());}
+		req(X+"/"+L,"PUT",s.toString());
+	}
+
+	private String putRecord(long id,JSONObject o)throws Exception{String fn=id+".json";req(X+"/"+fn,"PUT",J.enc(o.toString()));return fn;}
+
+	private JSONObject getRecord(String fn)throws Exception{return new JSONObject(J.dec(req(X+"/"+fn,"GET",null)));}
+
+	private void delRemote(String fn)throws Exception{try{req(X+"/"+fn,"DELETE",null);}catch(Exception e){}}
+
 	String upFile(String p,String prefix)throws Exception{
 		if(p==null||p.isEmpty()||p.startsWith("http"))return p;
-		File f=new File(p.replace("file://",""));if(!f.exists())return p;
-		byte[] b=new byte[(int)f.length()];try(FileInputStream i=new FileInputStream(f)){i.read(b);}
-		String n=prefix+ts()+"_"+f.getName();req(X+"/files/"+n,"PUT",Base64.encodeToString(b,Base64.NO_WRAP));
-		addFileLog("files/"+n);return U+X+"/files/"+n;
+		String path=p.replace("file://","");File f=new File(path);
+		if(!f.exists()||!f.canRead())return p;
+		try{byte[] b=new byte[(int)f.length()];try(FileInputStream i=new FileInputStream(f)){int t=0;while(t<b.length)t+=i.read(b,t,b.length-t);}String n=prefix+f.getName();req(X+"/files/"+n,"PUT",Base64.encodeToString(b,Base64.NO_WRAP));return U+X+"/files/"+n;}catch(Exception e){return p;}
 	}
 
-	private JSONArray packAndUpload(JSONArray a)throws Exception{
-		for(int i=0;i<a.length();i++){JSONObject r=a.getJSONObject(i);
-			if(r.has("imgs")&&!r.isNull("imgs")){JSONArray imgs=r.getJSONArray("imgs"),ni=new JSONArray();for(int j=0;j<imgs.length();j++)ni.put(upFile(imgs.getString(j),"img_"));r.put("imgs",ni);}
-			if(r.has("files")&&!r.isNull("files")){JSONArray fs=r.getJSONArray("files"),nf=new JSONArray();for(int j=0;j<fs.length();j++)nf.put(upFile(fs.getString(j),"file_"));r.put("files",nf);}
-		}return a;
+	private JSONObject packUpload(JSONObject r)throws Exception{
+		if(r.has("imgs")&&!r.isNull("imgs")){JSONArray imgs=r.getJSONArray("imgs"),ni=new JSONArray();for(int j=0;j<imgs.length();j++)ni.put(upFile(imgs.getString(j),"img_"));r.put("imgs",ni);}
+		if(r.has("files")&&!r.isNull("files")){JSONArray fs=r.getJSONArray("files"),nf=new JSONArray();for(int j=0;j<fs.length();j++)nf.put(upFile(fs.getString(j),"file_"));r.put("files",nf);}
+		return r;
 	}
 
-	void up(JSONArray a)throws Exception{
-		String fn=ts()+".json";JSONArray b=packAndUpload(a);
-		req(X+"/"+fn,"PUT",J.enc(b.toString()));addFileLog(fn);
-	}
-
-	JSONArray down()throws Exception{
-		JSONArray fl=getFileLog();int n=fl.length();if(n==0)return new JSONArray();
-		String last="";for(int i=n-1;i>=0;i--){String f=fl.getString(i);if(f.endsWith(".json")){last=f;break;}}
-		if(last.isEmpty())return new JSONArray();
-		return new JSONArray(J.dec(req(X+"/"+last,"GET",null)));
+	JSONObject init(J.D d)throws Exception{
+		Map<Long,String> list=loadList();
+		if(list.isEmpty()){saveList(new LinkedHashMap<>());return new JSONObject().put("ok",true).put("count",0);}
+		d.clear(null);
+		for(Map.Entry<Long,String> e:list.entrySet()){try{JSONObject r=getRecord(e.getValue());r.put("id",e.getKey());d.save(r,null);}catch(Exception ex){}}
+		return new JSONObject().put("ok",true).put("count",list.size());
 	}
 
 	JSONObject sync(J.D d,boolean local)throws Exception{
-		if(local){JSONArray r=d.allRaw(),u=packAndUpload(r);String fn=ts()+".json";req(X+"/"+fn,"PUT",J.enc(u.toString()));addFileLog(fn);for(int i=0;i<u.length();i++){JSONObject o=u.getJSONObject(i);d.updateLinks(o.getLong("id"),o.optString("imgs","[]"),o.optString("files","[]"));}return new JSONObject().put("ok",true).put("file",fn);}
-		else{JSONArray a=down();if(a.length()==0)return new JSONObject().put("ok",false).put("msg","无备份数据");d.clear(null);for(int i=0;i<a.length();i++){JSONObject r=a.getJSONObject(i);r.put("id",0);d.save(r,null);}return new JSONObject().put("ok",true).put("count",a.length());}
+		Map<Long,String> list=loadList();
+		if(local){
+			JSONArray all=d.allRaw();Set<Long> ids=new HashSet<>();Map<Long,String> nl=new LinkedHashMap<>();
+			for(int i=0;i<all.length();i++){JSONObject r=all.getJSONObject(i);long id=r.getLong("id");r=packUpload(r);nl.put(id,putRecord(id,r));ids.add(id);d.updateLinks(id,r.optString("imgs","[]"),r.optString("files","[]"));}
+			for(Map.Entry<Long,String> e:list.entrySet()){if(!ids.contains(e.getKey()))delRemote(e.getValue());}
+			saveList(nl);return new JSONObject().put("ok",true);
+		}else{
+			d.clear(null);int c=0;
+			for(Map.Entry<Long,String> e:list.entrySet()){try{JSONObject r=getRecord(e.getValue());r.put("id",e.getKey());d.save(r,null);c++;}catch(Exception ex){}}
+			return new JSONObject().put("ok",true).put("count",c);
+		}
 	}
+
+	void upRecord(long id,JSONObject r)throws Exception{r=packUpload(r);String fn=putRecord(id,r);Map<Long,String> list=loadList();list.put(id,fn);saveList(list);}
+
+	void delRecord(long id)throws Exception{Map<Long,String> list=loadList();String fn=list.remove(id);if(fn!=null)delRemote(fn);saveList(list);}
 
 	void delFile(String url)throws Exception{req(url.replace(U,""),"DELETE",null);}
 
-	void clear()throws Exception{JSONArray fl=getFileLog();for(int i=0;i<fl.length();i++){try{req(X+"/"+fl.getString(i),"DELETE",null);}catch(Exception e){}}clearFileLog();}
+	void clear()throws Exception{Map<Long,String> list=loadList();for(String fn:list.values())delRemote(fn);saveList(new LinkedHashMap<>());}
 
 	private String ts(){return String.valueOf(System.currentTimeMillis());}
 }

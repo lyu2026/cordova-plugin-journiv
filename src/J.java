@@ -25,7 +25,8 @@ public class J extends CordovaPlugin{
 	public boolean execute(String a,JSONArray r,CallbackContext b)throws JSONException{
 		try{
 			switch(a){
-				case "save":{JSONObject o=r.getJSONObject(0);d.save(o,r.optBoolean(1,false)?s:null);b.success();break;}
+				case "init":cordova.getThreadPool().execute(()->{try{b.success(s.init(d));}catch(Exception e){b.error(e.getMessage());}});return true;
+				case "save":{JSONObject o=r.getJSONObject(0);long id=d.save(o,r.optBoolean(1,false)?s:null);b.success(new JSONObject().put("id",id));break;}
 				case "remove":{Object v=r.get(0);int[] ids=v instanceof JSONArray?ja((JSONArray)v):new int[]{r.getInt(0)};d.remove(ids,r.optBoolean(1,false)?s:null);b.success();break;}
 				case "page":b.success(d.page(r.optJSONObject(0),r.optInt(1,1),r.optInt(2,20)));break;
 				case "one":b.success(d.one(r.getInt(0)));break;
@@ -53,7 +54,7 @@ public class J extends CordovaPlugin{
 		public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE d(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,content TEXT,mood TEXT,tags TEXT,imgs TEXT DEFAULT '[]',files TEXT DEFAULT '[]',lat REAL,lng REAL,addr TEXT,at TEXT)");}
 		public void onUpgrade(SQLiteDatabase d,int o,int n){d.execSQL("DROP TABLE IF EXISTS d");onCreate(d);}
 
-		void save(JSONObject o,S s)throws Exception{
+		long save(JSONObject o,S s)throws Exception{
 			SQLiteDatabase db=getWritableDatabase();ContentValues v=new ContentValues();
 			long id=o.optLong("id",0);v.put("title",o.optString("title"));v.put("content",enc(o.optString("content")));
 			v.put("mood",o.optString("mood"));v.put("tags",o.optString("tags"));
@@ -61,15 +62,14 @@ public class J extends CordovaPlugin{
 			Object fi=o.opt("files");v.put("files",fi instanceof JSONArray?fi.toString():(fi instanceof String?(String)fi:"[]"));
 			if(o.has("lat"))v.put("lat",o.getDouble("lat"));if(o.has("lng"))v.put("lng",o.getDouble("lng"));
 			v.put("addr",o.optString("addr",""));v.put("at",String.valueOf(System.currentTimeMillis()));
-			if(id>0)db.update("d",v,"id=?",new String[]{String.valueOf(id)});
-			else id=db.insert("d",null,v);
-			db.close();if(s!=null)s.up(allRaw());
+			if(id>0){db.update("d",v,"id=?",new String[]{String.valueOf(id)});}else{id=db.insert("d",null,v);}
+			db.close();if(s!=null)s.upRecord(id,o);return id;
 		}
 
 		void remove(int[] ids,S s)throws Exception{
 			SQLiteDatabase db=getWritableDatabase();
-			for(int id:ids){Cursor c=db.query("d",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);if(c.moveToFirst()&&s!=null){delRemoteFiles(s,c.getString(0));delRemoteFiles(s,c.getString(1));}c.close();db.delete("d","id=?",new String[]{String.valueOf(id)});}
-			db.close();if(s!=null)s.up(allRaw());
+			for(int id:ids){Cursor c=db.query("d",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);if(c.moveToFirst()&&s!=null){delRemoteFiles(s,c.getString(0));delRemoteFiles(s,c.getString(1));}c.close();db.delete("d","id=?",new String[]{String.valueOf(id)});if(s!=null)s.delRecord(id);}
+			db.close();
 		}
 
 		void clear(S s)throws Exception{
