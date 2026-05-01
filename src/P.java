@@ -1,12 +1,15 @@
 package com.j.plugin;
 
 import java.text.SimpleDateFormat;
+import android.content.Context;
 import android.os.Environment;
 import org.json.*;
 import java.util.*;
 import java.io.*;
 
 public class P{
+	P(Context c){}
+
 	String export(long[] range,String fmt,J.D d)throws Exception{
 		JSONArray a=d.page(null,1,100000).getJSONArray("data");
 		List<JSONObject> list=new ArrayList<>();

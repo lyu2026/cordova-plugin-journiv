@@ -1,11 +1,14 @@
 package com.j.plugin;
 
 import java.text.SimpleDateFormat;
+import android.content.Context;
 import org.json.*;
 import java.util.*;
 
 public class T{
 	private SimpleDateFormat f=new SimpleDateFormat("yyyy-MM-dd",Locale.getDefault());
+
+	T(Context c){}
 
 	JSONObject summary(J.D d)throws Exception{
 		JSONObject o=new JSONObject();JSONArray a=d.allRaw();
