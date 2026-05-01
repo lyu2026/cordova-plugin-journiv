@@ -1,16 +1,16 @@
 package com.j.plugin;
 
+import android.content.*;
+import android.database.Cursor;
+import android.database.sqlite.*;
+import android.util.Base64;
+import org.apache.cordova.*;
+import org.json.*;
 import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
-import android.database.sqlite.*;
-import android.database.Cursor;
-import org.apache.cordova.*;
-import android.util.Base64;
+import java.util.*;
 import javax.crypto.Cipher;
 import javax.crypto.spec.*;
-import android.content.*;
-import org.json.*;
-import java.util.*;
 
 public class J extends CordovaPlugin{
 	private static final String K="abcdefghijklmnopqrstuvwxyz123456",V="abcdefghijklmnop";
@@ -49,8 +49,7 @@ public class J extends CordovaPlugin{
 	static String dec(String x)throws Exception{Cipher c=Cipher.getInstance("AES/CBC/PKCS5Padding");c.init(Cipher.DECRYPT_MODE,new SecretKeySpec(K.getBytes("UTF-8"),"AES"),new IvParameterSpec(V.getBytes("UTF-8")));return new String(c.doFinal(Base64.decode(x,Base64.NO_WRAP)),"UTF-8");}
 
 	class D extends SQLiteOpenHelper{
-		private Context x;
-		D(Context x){super(x,"j.db",null,2);this.x=x;}
+		D(Context x){super(x,"j.db",null,2);}
 		public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE d(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,content TEXT,mood TEXT,tags TEXT,imgs TEXT DEFAULT '[]',files TEXT DEFAULT '[]',lat REAL,lng REAL,addr TEXT,at TEXT)");}
 		public void onUpgrade(SQLiteDatabase d,int o,int n){d.execSQL("DROP TABLE IF EXISTS d");onCreate(d);}
 
@@ -58,8 +57,8 @@ public class J extends CordovaPlugin{
 			SQLiteDatabase db=getWritableDatabase();ContentValues v=new ContentValues();
 			long id=o.optLong("id",0);v.put("title",o.optString("title"));v.put("content",enc(o.optString("content")));
 			v.put("mood",o.optString("mood"));v.put("tags",o.optString("tags"));
-			v.put("imgs",o.optJSONArray("imgs")!=null?o.optJSONArray("imgs").toString():"[]");
-			v.put("files",o.optJSONArray("files")!=null?o.optJSONArray("files").toString():"[]");
+			Object im=o.opt("imgs");v.put("imgs",im instanceof JSONArray?im.toString():(im instanceof String?(String)im:"[]"));
+			Object fi=o.opt("files");v.put("files",fi instanceof JSONArray?fi.toString():(fi instanceof String?(String)fi:"[]"));
 			if(o.has("lat"))v.put("lat",o.getDouble("lat"));if(o.has("lng"))v.put("lng",o.getDouble("lng"));
 			v.put("addr",o.optString("addr",""));v.put("at",String.valueOf(System.currentTimeMillis()));
 			if(id>0)db.update("d",v,"id=?",new String[]{String.valueOf(id)});
@@ -69,11 +68,7 @@ public class J extends CordovaPlugin{
 
 		void remove(int[] ids,S s)throws Exception{
 			SQLiteDatabase db=getWritableDatabase();
-			for(int id:ids){
-				Cursor c=db.query("d",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);
-				if(c.moveToFirst()&&s!=null){delRemoteFiles(s,c.getString(0));delRemoteFiles(s,c.getString(1));}
-				c.close();db.delete("d","id=?",new String[]{String.valueOf(id)});
-			}
+			for(int id:ids){Cursor c=db.query("d",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);if(c.moveToFirst()&&s!=null){delRemoteFiles(s,c.getString(0));delRemoteFiles(s,c.getString(1));}c.close();db.delete("d","id=?",new String[]{String.valueOf(id)});}
 			db.close();if(s!=null)s.up(allRaw());
 		}
 
@@ -88,7 +83,7 @@ public class J extends CordovaPlugin{
 
 		JSONArray allRaw(){JSONArray a=new JSONArray();Cursor c=getReadableDatabase().rawQuery("SELECT * FROM d ORDER BY at DESC",null);while(c.moveToNext())a.put(row(c));c.close();return a;}
 
-		JSONObject row(Cursor c){JSONObject o=new JSONObject();try{o.put("id",c.getLong(0));o.put("title",c.getString(1));try{o.put("content",dec(c.getString(2)));}catch(Exception e){o.put("content",c.getString(2));}o.put("mood",c.getString(3));o.put("tags",c.getString(4));o.put("imgs",c.getString(5));o.put("files",c.getString(6));o.put("lat",c.getDouble(7));o.put("lng",c.getDouble(8));o.put("addr",c.getString(9));o.put("at",c.getString(10));}catch(Exception e){}return o;}
+		JSONObject row(Cursor c){JSONObject o=new JSONObject();try{o.put("id",c.getLong(0));o.put("title",c.getString(1));try{o.put("content",dec(c.getString(2)));}catch(Exception e){o.put("content",c.getString(2));}o.put("mood",c.getString(3));o.put("tags",c.getString(4));o.put("imgs",new JSONArray(c.getString(5)));o.put("files",new JSONArray(c.getString(6)));o.put("lat",c.getDouble(7));o.put("lng",c.getDouble(8));o.put("addr",c.getString(9));o.put("at",c.getString(10));}catch(Exception e){}return o;}
 
 		JSONObject page(JSONObject q,int pg,int sz)throws Exception{
 			StringBuilder w=new StringBuilder(" WHERE 1=1");List<String> p=new ArrayList<>();
