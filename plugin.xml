@@ -1,53 +1,30 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-Journiv" version="1.0.0">
-	<name>Journiv</name>
-	<description>私密日记插件：加密存储、图片管理、全文搜索、WebDAV云同步、智能提醒、数据统计、PDF导出</description>
-	<author>Lyu2026</author>
-	<license>MIT</license>
-	<keywords>diary,journal,encrypted,webdav,private</keywords>
-	<js-module src="www/Journiv.js" name="Journiv">
-		<clobbers target="Journiv"/>
-	</js-module>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-journiv" version="1.0.0">
+	<name>journiv</name>
+	<js-module src="www/j.js" name="journiv"><clobbers target="cordova.plugin.journiv"/></js-module>
 	<platform name="android">
 		<config-file target="AndroidManifest.xml" parent="/*">
 			<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
 			<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-			<uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+			<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 			<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 			<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 			<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 			<uses-permission android:name="android.permission.INTERNET"/>
-			<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 			<uses-permission android:name="android.permission.VIBRATE"/>
 		</config-file>
 		<config-file target="AndroidManifest.xml" parent="/manifest/application">
-			<receiver android:name="com.journiv.plugin.RemindReceiver" android:exported="false">
-				<intent-filter>
-					<action android:name="com.journiv.ACTION_REMIND"/>
-				</intent-filter>
-			</receiver>
-			<receiver android:name="com.journiv.plugin.BootReceiver" android:exported="false">
-				<intent-filter>
-					<action android:name="android.intent.action.BOOT_COMPLETED"/>
-				</intent-filter>
-			</receiver>
+			<receiver android:name="com.j.plugin.M$R" android:exported="false"><intent-filter><action android:name="com.j.REMIND"/></intent-filter></receiver>
+			<receiver android:name="com.j.plugin.M$B" android:exported="false"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/></intent-filter></receiver>
 		</config-file>
 		<config-file target="res/xml/config.xml" parent="/*">
-			<feature name="Journiv">
-				<param name="android-package" value="com.journiv.plugin.Journiv"/>
-			</feature>
+			<feature name="journiv"><param name="android-package" value="com.j.plugin.J"/></feature>
 		</config-file>
-		<source-file src="src/android/Journiv.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/DBHelper.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/CryptoUtil.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/ImgManager.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/SyncManager.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/RemindManager.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/RemindReceiver.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/BootReceiver.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/StatsManager.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/PdfExport.java" target-dir="src/com/journiv/plugin"/>
-		<source-file src="src/android/models/Entry.java" target-dir="src/com/journiv/plugin/models"/>
+		<source-file src="src/J.java" target-dir="src/com/j/plugin"/>
+		<source-file src="src/S.java" target-dir="src/com/j/plugin"/>
+		<source-file src="src/M.java" target-dir="src/com/j/plugin"/>
+		<source-file src="src/T.java" target-dir="src/com/j/plugin"/>
+		<source-file src="src/P.java" target-dir="src/com/j/plugin"/>
 		<framework src="androidx.core:core:1.12.0"/>
 	</platform>
 </plugin>
