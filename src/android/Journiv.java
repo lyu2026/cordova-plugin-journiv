@@ -54,6 +54,7 @@ public class Journiv extends CordovaPlugin{
 				case "save":       return save(args,cb);
 				case "get":        return get(args,cb);
 				case "all":        return all(cb);
+				case "summary": return summary(cb);
 				case "update":     return update(args,cb);
 				case "remove":     return remove(args,cb);
 				case "memory":     return memory(cb);
@@ -118,6 +119,16 @@ public class Journiv extends CordovaPlugin{
 			for(Entry e:list) arr.put(toJson(e));
 			cb.success(arr);
 		}catch(Exception e){cb.error(e.getMessage());}
+		return true;
+	}
+
+	private boolean summary(CallbackContext cb){
+		cordova.getThreadPool().execute(()->{
+			try{
+				JSONObject r=stat.summary();
+				cb.success(r);
+			}catch(Exception e){cb.error(e.getMessage());}
+		});
 		return true;
 	}
 

@@ -1,48 +1,49 @@
 const E=require('cordova/exec')
+const P=(a,...b)=>new Promise((o,x)=>E(o,x,'Journiv',a,b))
+
 const J={
 	// 日记 CRUD
-	save:function(title,content,mood,tags,o,x){E(o,x,'Journiv','save',[title,content,mood,tags])},
-	get:function(id,o,x){E(o,x,'Journiv','get',[id])},
-	all:function(o,x){E(o,x,'Journiv','all',[])},
-	update:function(id,title,content,mood,tags,o,x){E(o,x,'Journiv','update',[id,title,content,mood,tags])},
-	remove:function(id,o,x){E(o,x,'Journiv','remove',[id])},
+	save:(t,c,m,g)=>P('save',t,c,m,g),
+	get:i=>P('get',i),
+	all:()=>P('all'),
+	update:(i,t,c,m,g)=>P('update',i,t,c,m,g),
+	remove:i=>P('remove',i),
 
 	// 那年今日
-	memory:function(o,x){E(o,x,'Journiv','memory',[])},
-	// 按情绪筛选
-	byMood:function(mood,o,x){E(o,x,'Journiv','byMood',[mood])},
-	// 随机写作提示
-	prompt:function(o,x){E(o,x,'Journiv','prompt',[])},
+	memory:()=>P('memory'),
+	byMood:m=>P('byMood',m),
+	prompt:()=>P('prompt'),
 
 	// 应用锁
-	setPass:function(pwd,o,x){E(o,x,'Journiv','setPass',[pwd])},
-	checkPass:function(pwd,o,x){E(o,x,'Journiv','checkPass',[pwd])},
+	setPass:p=>P('setPass',p),
+	checkPass:p=>P('checkPass',p),
 
 	// 图片管理
-	addImg:function(diaryId,b64,o,x){E(o,x,'Journiv','addImg',[diaryId,b64])},
-	getImgs:function(diaryId,o,x){E(o,x,'Journiv','getImgs',[diaryId])},
+	addImg:(i,b)=>P('addImg',i,b),
+	getImgs:i=>P('getImgs',i),
 
 	// 搜索
-	search:function(q,o,x){E(o,x,'Journiv','search',[q])},
-	advSearch:function(kw,start,end,mood,tags,o,x){E(o,x,'Journiv','advSearch',[kw,start,end,mood,tags])},
+	search:q=>P('search',q),
+	advSearch:(k,s,e,m,t)=>P('advSearch',k,s,e,m,t),
 
 	// WebDAV 同步
-	syncUp:function(o,x){E(o,x,'Journiv','syncUp',[])},
-	syncDown:function(o,x){E(o,x,'Journiv','syncDown',[])},
-	syncStatus:function(o,x){E(o,x,'Journiv','syncStatus',[])},
+	syncUp:()=>P('syncUp'),
+	syncDown:()=>P('syncDown'),
+	syncStatus:()=>P('syncStatus'),
 
 	// 提醒
-	setRemind:function(id,hour,min,days,on,type,o,x){E(o,x,'Journiv','setRemind',[id,hour,min,days,on,type])},
-	cancelRemind:function(id,o,x){E(o,x,'Journiv','cancelRemind',[id])},
-	allReminds:function(o,x){E(o,x,'Journiv','allReminds',[])},
+	setRemind:(i,h,m,d,o,t)=>P('setRemind',i,h,m,d,o,t),
+	cancelRemind:i=>P('cancelRemind',i),
+	allReminds:()=>P('allReminds'),
 
 	// 统计
-	stats:function(start,end,o,x){E(o,x,'Journiv','stats',[start,end])},
-	moodChart:function(days,o,x){E(o,x,'Journiv','moodChart',[days||30])},
-	streak:function(o,x){E(o,x,'Journiv','streak',[])},
+	stats:(s,e)=>P('stats',s,e),
+	moodChart:d=>P('moodChart',d||30),
+	streak:()=>P('streak'),
+	summary:()=>P('summary'),
 
 	// PDF 导出
-	exportPdf:function(path,start,end,o,x){E(o,x,'Journiv','exportPdf',[path,start,end])}
+	exportPdf:(p,s,e)=>P('exportPdf',p,s,e)
 };
 
 module.exports=J

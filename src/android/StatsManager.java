@@ -17,6 +17,39 @@ public class StatsManager{
 		this.db=new DBHelper(ctx);
 	}
 
+	// 综合摘要统计 - 更优版本
+	public JSONObject summary(){
+		JSONObject s=new JSONObject();
+		try{
+			int count=db.count();
+			List<Entry> list=db.query("1=1",new String[]{},false);
+			Set<String> days=new HashSet<>();
+			for(Entry e:list){
+				try{
+					long ts=Long.parseLong(e.created);
+					days.add(sdf.format(new Date(ts)));
+				}catch(Exception ex){}
+			}
+			Calendar cal=Calendar.getInstance();
+			int streak=0;
+			while(true){
+				String date=sdf.format(cal.getTime());
+				if(days.contains(date)){
+					streak++;
+					cal.add(Calendar.DAY_OF_YEAR,-1);
+				}else{
+					break;
+				}
+			}
+			s.put("count",count);
+			s.put("streak",streak);
+			s.put("days",days.size());
+		}catch(Exception e){
+			try{s.put("streak",0);s.put("days",0);s.put("count",0);}catch(Exception ex){}
+		}
+		return s;
+	}
+
 	// 综合统计
 	public JSONObject stats(String start,String end) throws Exception{
 		JSONObject s=new JSONObject();
