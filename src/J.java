@@ -15,6 +15,7 @@ import java.util.*;
 public class J extends CordovaPlugin{
 	private static final String K="abcdefghijklmnopqrstuvwxyz123456",V="abcdefghijklmnop";
 	private D d;private S s;private M m;private T t;private P p;private SharedPreferences f;
+	private TimeZone tz=TimeZone.getTimeZone("Asia/Shanghai");
 
 	public void initialize(CordovaInterface c,CordovaWebView w){
 		super.initialize(c,w);Context x=c.getContext();
@@ -51,7 +52,7 @@ public class J extends CordovaPlugin{
 	class D extends SQLiteOpenHelper{
 		private final Object L=new Object();
 
-		D(Context x){super(x,"Journiv",null,2);}
+		D(Context x){super(x,"journiv",null,2);}
 		public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE o(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,content TEXT,mood TEXT,tags TEXT,imgs TEXT DEFAULT '[]',files TEXT DEFAULT '[]',lat REAL,lng REAL,addr TEXT,at TEXT)");}
 		public void onUpgrade(SQLiteDatabase d,int o,int n){d.execSQL("DROP TABLE IF EXISTS o");onCreate(d);}
 
@@ -132,6 +133,6 @@ public class J extends CordovaPlugin{
 
 		JSONArray multi(int[] ids){synchronized(L){JSONArray a=new JSONArray();for(int id:ids){JSONObject o=one(id);if(o.has("id"))a.put(o);}return a;}}
 
-		JSONArray memory(){synchronized(L){JSONArray a=new JSONArray();Calendar c=Calendar.getInstance();int y=c.get(Calendar.YEAR);for(int i=1;i<=10;i++){c.set(Calendar.YEAR,y-i);String d=new SimpleDateFormat("MM-dd",Locale.getDefault()).format(c.getTime());Cursor cu=getReadableDatabase().rawQuery("SELECT * FROM o WHERE at LIKE ? ORDER BY at DESC",new String[]{"%"+d+"%"});JSONArray r=new JSONArray();while(cu.moveToNext())r.put(row(cu));cu.close();if(r.length()>0)a.put(r);}return a;}}
+		JSONArray memory(){synchronized(L){JSONArray a=new JSONArray();Calendar c=Calendar.getInstance(tz);int y=c.get(Calendar.YEAR);for(int i=1;i<=10;i++){c.set(Calendar.YEAR,y-i);String d=new SimpleDateFormat("MM-dd",Locale.getDefault()).format(c.getTime());Cursor cu=getReadableDatabase().rawQuery("SELECT * FROM o WHERE at LIKE ? ORDER BY at DESC",new String[]{"%"+d+"%"});JSONArray r=new JSONArray();while(cu.moveToNext())r.put(row(cu));cu.close();if(r.length()>0)a.put(r);}return a;}}
 	}
 }

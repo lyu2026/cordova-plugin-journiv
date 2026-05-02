@@ -1,27 +1,28 @@
 package com.j.plugin;
 
-import android.app.*;
+import androidx.core.app.NotificationCompat;
 import android.content.*;
 import android.os.Build;
-import androidx.core.app.NotificationCompat;
+import android.app.*;
 import org.json.*;
 import java.util.*;
 
 public class M{
 	private Context C;private AlarmManager A;
+	private TimeZone tz=TimeZone.getTimeZone("Asia/Shanghai");
 
 	M(Context C){this.C=C;this.A=(AlarmManager)C.getSystemService(Context.ALARM_SERVICE);}
 
 	void config(JSONObject o){
 		SharedPreferences p=C.getSharedPreferences("cfg",Context.MODE_PRIVATE);
 		SharedPreferences.Editor e=p.edit();
-		if(o.has("remindHour"))e.putInt("rh",o.optInt("remindHour",20));
-		if(o.has("syncAuto"))e.putBoolean("sa",o.optBoolean("syncAuto",false));
+		if(o.has("remind"))e.putInt("rh",o.optInt("remind",20));
+		if(o.has("sauto"))e.putBoolean("sa",o.optBoolean("sauto",false));
 		e.apply();schedule(p.getInt("rh",20));
 	}
 
 	private void schedule(int h){
-		Calendar c=Calendar.getInstance();c.set(Calendar.HOUR_OF_DAY,h);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);
+		Calendar c=Calendar.getInstance(tz);c.set(Calendar.HOUR_OF_DAY,h);c.set(Calendar.MINUTE,0);c.set(Calendar.SECOND,0);
 		if(c.getTimeInMillis()<=System.currentTimeMillis())c.add(Calendar.DAY_OF_YEAR,1);
 		Intent in=new Intent("com.j.REMIND");in.putExtra("t","日记时间");in.putExtra("m","今天还没写日记哦~");
 		PendingIntent pi=PendingIntent.getBroadcast(C,0,in,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
