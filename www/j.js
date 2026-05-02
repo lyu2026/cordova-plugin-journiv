@@ -1,6 +1,7 @@
 const E=cordova.require('cordova/exec'),P=(a,b)=>new Promise((o,x)=>E(o,x,'journiv',a,b||[]));
 module.exports={
-	init:()=>P('init'),
+	lmap:()=>P('lmap'),
+	lsync:(id)=>P('lsync',[id]),
 	save:(d,s)=>P('save',[d,s]),
 	remove:(ids,s)=>P('remove',[ids,s]),
 	page:(q,pg,sz)=>P('page',[q||{},pg||1,sz||20]),
