@@ -22,7 +22,7 @@
 			<feature name="journiv"><param name="android-package" value="com.j.plugin.J"/></feature>
 		</config-file>
 		<source-file src="src/J.java" target-dir="src/com/j/plugin"/>
-		<source-file src="src/S.java" target-dir="src/com/j/plugin"/>
+		<source-file src="src/K.java" target-dir="src/com/j/plugin"/>
 		<source-file src="src/M.java" target-dir="src/com/j/plugin"/>
 		<source-file src="src/T.java" target-dir="src/com/j/plugin"/>
 		<source-file src="src/P.java" target-dir="src/com/j/plugin"/>
