@@ -1,16 +1,14 @@
 const E=cordova.require('cordova/exec'),P=(a,b)=>new Promise((o,x)=>E(o,x,'journiv',a,b||[]));
 module.exports={
-	lmap:()=>P('lmap'),
-	lsync:(id)=>P('lsync',[id]),
-	save:(d,s)=>P('save',[d,s]),
-	remove:(ids,s)=>P('remove',[ids,s]),
-	page:(q,pg,sz)=>P('page',[q||{},pg||1,sz||20]),
-	one:(id)=>P('one',[id]),
-	multi:(ids)=>P('multi',[ids]),
+	lone:_=>P('lone',[_||0]),
+	save:(_,x,s)=>P('save',[_,x,s]),
+	remove:(_,s)=>P('remove',[_,s]),
+	page:(_,p,s)=>P('page',[_||{},p||1,s||20]),
+	one:_=>P('one',[_]),
+	multi:_=>P('multi',[_]),
 	memory:()=>P('memory'),
-	sync:(local)=>P('sync',[local]),
-	clear:(t)=>P('clear',[t||0]),
-	export:(range,fmt)=>P('export',[range,fmt]),
+	clear:_=>P('clear',[_||0]),
+	export:(_,x)=>P('export',[_,x]),
 	summary:()=>P('summary'),
-	config:(cfg)=>P('config',[cfg])
+	config:_=>P('config',[_])
 };

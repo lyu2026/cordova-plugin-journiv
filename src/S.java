@@ -94,44 +94,25 @@ public class S{
 
 	private void delRemote(String n)throws Exception{try{req(X+"/"+n,"DELETE",null);}catch(Exception e){}}
 
-	public JSONObject lmap(){
-		Map<Long,String> m=loadList();JSONObject o=new JSONObject();
-		try{for(Map.Entry<Long,String> e:m.entrySet())o.put(String.valueOf(e.getKey()),e.getValue());}catch(Exception ex){}
-		return o;
-	}
-
-	public JSONObject lsync(long id,J.D d){
+	public JSONArray lone(long id,J.D d){
 		try{
-			Map<Long,String> m=loadList();
-			String n=m.get(id);
-			if(n==null)return new JSONObject().put("ok",false).put("msg","记录不存在");
-			JSONObject r=new JSONObject(J.dec(req(X+"/"+n,"GET",null)));
-			r.put("id",id);
-			d.insertRaw(r);
-			return new JSONObject().put("ok",true);
-		}catch(Exception e){
-			try{return new JSONObject().put("ok",false).put("msg",e.getMessage());}catch(Exception ex){}
-			return new JSONObject();
-		}
-	}
-
-	public JSONObject sync(J.D d,boolean local)throws Exception{
-		Map<Long,String> list=loadList();
-		if(local){
-			JSONArray all=d.allRaw();Set<Long> ids=new HashSet<>();Map<Long,String> nl=new LinkedHashMap<>();
-			for(int i=0;i<all.length();i++){
-				JSONObject r=all.getJSONObject(i);long id=r.getLong("id");
-				JSONArray oi=r.has("imgs")?r.getJSONArray("imgs"):null;
-				JSONArray of=r.has("files")?r.getJSONArray("files"):null;
-				r=packUpload(r,oi,of);nl.put(id,putRecord(id,r));ids.add(id);
-				d.updateLinks(id,r.optString("imgs","[]"),r.optString("files","[]"));
+			if(id<=0){
+				Map<Long,String> m=loadList();
+				JSONArray a=new JSONArray();
+				for(long k:m.keySet())a.put(k);
+				return a;
+			}else{
+				Map<Long,String> m=loadList();
+				String n=m.get(id);
+				if(n==null)return new JSONArray();
+				JSONObject r=new JSONObject(J.dec(req(X+"/"+n,"GET",null)));
+				r.put("id",id);
+				JSONArray a=new JSONArray();
+				a.put(r);
+				return a;
 			}
-			for(Map.Entry<Long,String> e:list.entrySet()){if(!ids.contains(e.getKey()))delRemote(e.getValue());}
-			saveList(nl);return new JSONObject().put("ok",true);
-		}else{
-			d.clear(null);int c=0;
-			for(Map.Entry<Long,String> e:list.entrySet()){try{JSONObject r=new JSONObject(J.dec(req(X+"/"+e.getValue(),"GET",null)));r.put("id",e.getKey());d.insertRaw(r);c++;}catch(Exception ex){}}
-			return new JSONObject().put("ok",true).put("count",c);
+		}catch(Exception e){
+			return new JSONArray();
 		}
 	}
 

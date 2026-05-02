@@ -25,15 +25,13 @@ public class J extends CordovaPlugin{
 	public boolean execute(String a,JSONArray r,CallbackContext b)throws JSONException{
 		try{
 			switch(a){
-				case "lmap":b.success(s.lmap());break;
-				case "lsync":cordova.getThreadPool().execute(()->{try{b.success(s.lsync(r.getLong(0),d));}catch(Exception e){b.error(e.getMessage());}});return true;
-				case "save":{JSONObject o=r.getJSONObject(0);long id=d.save(o,r.optBoolean(1,false)?s:null);b.success(d.one((int)id));break;}
+				case "lone":b.success(s.lone(r.optLong(0,0),d));break;
+				case "save":{JSONObject o=r.getJSONObject(0);b.success(d.save(o,r.optBoolean(1,true),r.optBoolean(2,false)?null:s));break;}
 				case "remove":{Object v=r.get(0);int[] ids=v instanceof JSONArray?ja((JSONArray)v):new int[]{r.getInt(0)};d.remove(ids,r.optBoolean(1,false)?s:null);b.success();break;}
 				case "page":b.success(d.page(r.optJSONObject(0),r.optInt(1,1),r.optInt(2,20)));break;
 				case "one":b.success(d.one(r.getInt(0)));break;
 				case "multi":b.success(d.multi(ja(r.getJSONArray(0))));break;
 				case "memory":b.success(d.memory());break;
-				case "sync":cordova.getThreadPool().execute(()->{try{b.success(s.sync(d,r.optBoolean(0,true)));}catch(Exception e){b.error(e.getMessage());}});return true;
 				case "clear":{int v=r.optInt(0,0);if(v==0){d.clear(s);s.clear();}else if(v==1)d.clear(null);else s.clear();b.success();break;}
 				case "export":b.success(p.export(ja2(r.getJSONArray(0)),r.getString(1),d));break;
 				case "summary":b.success(t.summary(d));break;
@@ -57,55 +55,53 @@ public class J extends CordovaPlugin{
 		public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE o(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,content TEXT,mood TEXT,tags TEXT,imgs TEXT DEFAULT '[]',files TEXT DEFAULT '[]',lat REAL,lng REAL,addr TEXT,at TEXT)");}
 		public void onUpgrade(SQLiteDatabase d,int o,int n){d.execSQL("DROP TABLE IF EXISTS o");onCreate(d);}
 
-		long save(JSONObject o,S s)throws Exception{
+		JSONObject save(JSONObject o,boolean ins,S s)throws Exception{
 			synchronized(L){
 				SQLiteDatabase db=getWritableDatabase();ContentValues v=new ContentValues();
 				long id=o.optLong("id",0);
 				JSONArray oi=null,of=null;
-				if(id>0&&s!=null){Cursor c=db.query("o",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);if(c.moveToFirst()){try{oi=new JSONArray(c.getString(0));}catch(Exception e){}try{of=new JSONArray(c.getString(1));}catch(Exception e){}}c.close();}
-				v.put("title",o.optString("title"));v.put("content",enc(o.optString("content")));
-				v.put("mood",o.optString("mood"));v.put("tags",o.optString("tags"));
-				Object im=o.opt("imgs");v.put("imgs",im instanceof JSONArray?im.toString():(im instanceof String?(String)im:"[]"));
-				Object fi=o.opt("files");v.put("files",fi instanceof JSONArray?fi.toString():(fi instanceof String?(String)fi:"[]"));
-				if(o.has("lat"))v.put("lat",o.getDouble("lat"));if(o.has("lng"))v.put("lng",o.getDouble("lng"));
-				v.put("addr",o.optString("addr",""));v.put("at",String.valueOf(System.currentTimeMillis()));
-				if(id>0){db.update("o",v,"id=?",new String[]{String.valueOf(id)});}else{id=db.insert("o",null,v);}
+				if(id>0){
+					Cursor c=db.query("o",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);
+					if(c.moveToFirst()){
+						if(s!=null){try{oi=new JSONArray(c.getString(0));}catch(Exception e){}try{of=new JSONArray(c.getString(1));}catch(Exception e){}}
+						c.close();fill(v,o);db.update("o",v,"id=?",new String[]{String.valueOf(id)});
+					}else{
+						c.close();
+						if(!ins){db.close();throw new Exception("记录 "+id+" 不存在");}
+						fill(v,o);v.put("id",id);id=db.insert("o",null,v);
+					}
+				}else{fill(v,o);id=db.insert("o",null,v);}
 				db.close();
-				if(s!=null){o.put("id",id);s.upRecord(id,o,oi,of);}return id;
+				if(s!=null){try{o.put("id",id);s.upRecord(id,o,oi,of);}catch(Exception e){throw new Exception("同步失败: "+e.getMessage());}}
+				return one((int)id);
 			}
 		}
 
-		void insertRaw(JSONObject o)throws Exception{
-			synchronized(L){
-				SQLiteDatabase db=getWritableDatabase();ContentValues v=new ContentValues();
-				long id=o.optLong("id",0);
-				v.put("title",o.optString("title"));v.put("content",o.optString("content"));
-				v.put("mood",o.optString("mood"));v.put("tags",o.optString("tags"));
-				Object im=o.opt("imgs");v.put("imgs",im instanceof JSONArray?im.toString():(im instanceof String?(String)im:"[]"));
-				Object fi=o.opt("files");v.put("files",fi instanceof JSONArray?fi.toString():(fi instanceof String?(String)fi:"[]"));
-				if(o.has("lat"))v.put("lat",o.getDouble("lat"));if(o.has("lng"))v.put("lng",o.getDouble("lng"));
-				v.put("addr",o.optString("addr",""));v.put("at",o.optString("at",String.valueOf(System.currentTimeMillis())));
-				if(id>0){db.update("o",v,"id=?",new String[]{String.valueOf(id)});}else{db.insert("o",null,v);}
-				db.close();
-			}
+		private void fill(ContentValues v,JSONObject o)throws Exception{
+			v.put("title",o.optString("title"));v.put("content",enc(o.optString("content")));
+			v.put("mood",o.optString("mood"));v.put("tags",o.optString("tags"));
+			Object im=o.opt("imgs");v.put("imgs",im instanceof JSONArray?im.toString():(im instanceof String?(String)im:"[]"));
+			Object fi=o.opt("files");v.put("files",fi instanceof JSONArray?fi.toString():(fi instanceof String?(String)fi:"[]"));
+			if(o.has("lat"))v.put("lat",o.getDouble("lat"));if(o.has("lng"))v.put("lng",o.getDouble("lng"));
+			v.put("addr",o.optString("addr",""));v.put("at",String.valueOf(System.currentTimeMillis()));
 		}
 
 		void remove(int[] ids,S s)throws Exception{
 			synchronized(L){
 				SQLiteDatabase db=getWritableDatabase();
-				for(int id:ids){Cursor c=db.query("o",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);if(c.moveToFirst()&&s!=null){delRemoteFiles(s,c.getString(0));delRemoteFiles(s,c.getString(1));}c.close();db.delete("o","id=?",new String[]{String.valueOf(id)});if(s!=null)s.delRecord(id);}
+				for(int id:ids){Cursor c=db.query("o",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);if(c.moveToFirst()&&s!=null){delRemote(s,c.getString(0));delRemote(s,c.getString(1));}c.close();db.delete("o","id=?",new String[]{String.valueOf(id)});if(s!=null)s.delRecord(id);}
 				db.close();
 			}
 		}
 
 		void clear(S s)throws Exception{
 			synchronized(L){
-				if(s!=null){Cursor c=getReadableDatabase().rawQuery("SELECT imgs,files FROM o",null);while(c.moveToNext()){delRemoteFiles(s,c.getString(0));delRemoteFiles(s,c.getString(1));}c.close();}
+				if(s!=null){Cursor c=getReadableDatabase().rawQuery("SELECT imgs,files FROM o",null);while(c.moveToNext()){delRemote(s,c.getString(0));delRemote(s,c.getString(1));}c.close();}
 				getWritableDatabase().delete("o",null,null);
 			}
 		}
 
-		private void delRemoteFiles(S s,String j){try{JSONArray a=new JSONArray(j);for(int i=0;i<a.length();i++){String u=a.getString(i);if(u.startsWith("https://"))s.delFile(u);}}catch(Exception e){}}
+		private void delRemote(S s,String j){try{JSONArray a=new JSONArray(j);for(int i=0;i<a.length();i++){String u=a.getString(i);if(u.startsWith("https://"))s.delFile(u);}}catch(Exception e){}}
 
 		void updateLinks(long id,String imgs,String files){synchronized(L){ContentValues v=new ContentValues();v.put("imgs",imgs);v.put("files",files);getWritableDatabase().update("o",v,"id=?",new String[]{String.valueOf(id)});}}
 
