@@ -57,14 +57,21 @@ public class J extends CordovaPlugin{
 
 		long save(JSONObject o,S s)throws Exception{
 			SQLiteDatabase db=getWritableDatabase();ContentValues v=new ContentValues();
-			long id=o.optLong("id",0);v.put("title",o.optString("title"));v.put("content",enc(o.optString("content")));
+			long id=o.optLong("id",0);
+			JSONArray oldImgs=null,oldFiles=null;
+			if(id>0&&s!=null){
+				Cursor c=db.query("o",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);
+				if(c.moveToFirst()){try{oldImgs=new JSONArray(c.getString(0));}catch(Exception e){}try{oldFiles=new JSONArray(c.getString(1));}catch(Exception e){}}
+				c.close();
+			}
+			v.put("title",o.optString("title"));v.put("content",enc(o.optString("content")));
 			v.put("mood",o.optString("mood"));v.put("tags",o.optString("tags"));
 			Object im=o.opt("imgs");v.put("imgs",im instanceof JSONArray?im.toString():(im instanceof String?(String)im:"[]"));
 			Object fi=o.opt("files");v.put("files",fi instanceof JSONArray?fi.toString():(fi instanceof String?(String)fi:"[]"));
 			if(o.has("lat"))v.put("lat",o.getDouble("lat"));if(o.has("lng"))v.put("lng",o.getDouble("lng"));
 			v.put("addr",o.optString("addr",""));v.put("at",String.valueOf(System.currentTimeMillis()));
 			if(id>0){db.update("o",v,"id=?",new String[]{String.valueOf(id)});}else{id=db.insert("o",null,v);}
-			db.close();if(s!=null){o.put("id",id);s.upRecord(id,o);}return id;
+			db.close();if(s!=null){o.put("id",id);s.upRecord(id,o,oldImgs,oldFiles);}return id;
 		}
 
 		void remove(int[] ids,S s)throws Exception{
