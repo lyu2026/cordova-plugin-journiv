@@ -26,7 +26,7 @@ public class J extends CordovaPlugin{
 		try{
 			switch(a){
 				case "lmap":b.success(s.lmap());break;
-				case "lsync":cordova.getThreadPool().execute(()->{b.success(s.lsync(r.getLong(0),d));});return true;
+				case "lsync":cordova.getThreadPool().execute(()->{try{b.success(s.lsync(r.getLong(0),d));}catch(Exception e){b.error(e.getMessage());}});return true;
 				case "save":{JSONObject o=r.getJSONObject(0);long id=d.save(o,r.optBoolean(1,false)?s:null);b.success(d.one((int)id));break;}
 				case "remove":{Object v=r.get(0);int[] ids=v instanceof JSONArray?ja((JSONArray)v):new int[]{r.getInt(0)};d.remove(ids,r.optBoolean(1,false)?s:null);b.success();break;}
 				case "page":b.success(d.page(r.optJSONObject(0),r.optInt(1,1),r.optInt(2,20)));break;
