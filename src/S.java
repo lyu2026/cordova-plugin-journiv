@@ -19,16 +19,24 @@ public class S{
 
 	String getUrl(){return U;}
 
-	private String req(String p,String m,String d)throws Exception{
-		HttpURLConnection c;URL u=new URL(U+p);
-		if(u.getProtocol().equals("https")){SSLContext s=SSLContext.getInstance("TLS");s.init(null,new TrustManager[]{new X509TrustManager(){public void checkClientTrusted(X509Certificate[] c,String a){}public void checkServerTrusted(X509Certificate[] c,String a){}public X509Certificate[] getAcceptedIssuers(){return new X509Certificate[0];}}},new java.security.SecureRandom());HttpsURLConnection h=(HttpsURLConnection)u.openConnection();h.setSSLSocketFactory(s.getSocketFactory());h.setHostnameVerifier((t,r)->true);c=h;}else c=(HttpURLConnection)u.openConnection();
-		c.setRequestMethod(m);c.setConnectTimeout(5000);c.setReadTimeout(5000);
-		c.setRequestProperty("Authorization","Basic "+Base64.encodeToString((M+":"+E).getBytes(),Base64.NO_WRAP));
-		if(d!=null){c.setDoOutput(true);c.setRequestProperty("Content-Type","application/octet-stream");try(OutputStream o=c.getOutputStream()){o.write(d.getBytes("UTF-8"));}}
-		int x=c.getResponseCode();
-		if(x>=200&&x<300){BufferedReader r=new BufferedReader(new InputStreamReader(c.getInputStream(),"UTF-8"));StringBuilder o=new StringBuilder();String l;while((l=r.readLine())!=null)o.append(l);r.close();c.disconnect();return o.toString();}
-		c.disconnect();throw new IOException(x+" "+c.getResponseMessage());
+private String req(String p,String m,String d)throws Exception{
+	HttpURLConnection c;URL u=new URL(U+p);
+	if(u.getProtocol().equals("https")){SSLContext s=SSLContext.getInstance("TLS");s.init(null,new TrustManager[]{new X509TrustManager(){public void checkClientTrusted(X509Certificate[] c,String a){}public void checkServerTrusted(X509Certificate[] c,String a){}public X509Certificate[] getAcceptedIssuers(){return new X509Certificate[0];}}},new java.security.SecureRandom());HttpsURLConnection h=(HttpsURLConnection)u.openConnection();h.setSSLSocketFactory(s.getSocketFactory());h.setHostnameVerifier((t,r)->true);c=h;}else c=(HttpURLConnection)u.openConnection();
+	c.setRequestMethod(m);c.setConnectTimeout(5000);c.setReadTimeout(5000);
+	c.setRequestProperty("Authorization","Basic "+Base64.encodeToString((M+":"+E).getBytes(),Base64.NO_WRAP));
+	if(d!=null){c.setDoOutput(true);c.setRequestProperty("Content-Type","application/octet-stream");try(OutputStream o=c.getOutputStream()){o.write(d.getBytes("UTF-8"));}}
+	int x=c.getResponseCode();
+	if(x>=200&&x<300){
+		InputStream i=c.getInputStream();
+		if(i.available()==0){c.disconnect();return "";}
+		BufferedReader r=new BufferedReader(new InputStreamReader(i,"UTF-8"));
+		StringBuilder o=new StringBuilder();String l;
+		while((l=r.readLine())!=null)o.append(l);
+		r.close();c.disconnect();
+		return o.toString();
 	}
+	c.disconnect();throw new IOException(x+" "+c.getResponseMessage());
+}
 
 	private byte[] readLocal(String p)throws Exception{
 		InputStream i;
@@ -102,10 +110,7 @@ public class S{
 				for(long k:m.keySet())a.put(k);
 				return a;
 			}else{
-				Map<Long,String> m=loadList();
-				String n=m.get(id);
-				if(n==null)return new JSONArray();
-				JSONObject r=new JSONObject(J.dec(req(X+"/"+n,"GET",null)));
+				JSONObject r=new JSONObject(J.dec(req(X+"/"+id+".json","GET",null)));
 				r.put("id",id);
 				JSONArray a=new JSONArray();
 				a.put(r);
