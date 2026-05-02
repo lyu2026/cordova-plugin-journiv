@@ -135,14 +135,19 @@ public class S{
 		return o;
 	}
 
-	public JSONObject lsync(long id,J.D d)throws Exception{
-		Map<Long,String> m=loadList();
-		String fn=m.get(id);
-		if(fn==null)return new JSONObject().put("ok",false).put("msg","记录不存在");
-		JSONObject r=new JSONObject(J.dec(req(X+"/"+fn,"GET",null)));
-		r.put("id",id);
-		d.save(r,null);
-		return new JSONObject().put("ok",true);
+	public JSONObject lsync(long id,J.D d){
+		try{
+			Map<Long,String> m=loadList();
+			String fn=m.get(id);
+			if(fn==null)return new JSONObject().put("ok",false).put("msg","记录不存在");
+			JSONObject r=new JSONObject(J.dec(req(X+"/"+fn,"GET",null)));
+			r.put("id",id);
+			d.save(r,null);
+			return new JSONObject().put("ok",true);
+		}catch(Exception e){
+			try{return new JSONObject().put("ok",false).put("msg",e.getMessage());}catch(Exception ex){}
+			return new JSONObject();
+		}
 	}
 
 	public JSONObject sync(J.D d,boolean local)throws Exception{
