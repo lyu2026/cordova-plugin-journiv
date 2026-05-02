@@ -29,11 +29,9 @@ private String req(String p,String m,String d)throws Exception{
 	if(x>=200&&x<300){
 		InputStream i=c.getInputStream();
 		if(i.available()==0){c.disconnect();return "";}
-		BufferedReader r=new BufferedReader(new InputStreamReader(i,"UTF-8"));
-		StringBuilder o=new StringBuilder();String l;
-		while((l=r.readLine())!=null)o.append(l);
-		r.close();c.disconnect();
-		return o.toString();
+		String o=new String(i.readAllBytes(),"UTF-8");
+		c.disconnect();
+		return o;
 	}
 	c.disconnect();throw new IOException(x+" "+c.getResponseMessage());
 }
