@@ -180,7 +180,7 @@ public class J extends CordovaPlugin{
 				}
 				if(s&&_s!=null){
 					try{ii.put("id",id);_s.log(id,ii,si,sf);}
-					catch(Exception e){throw new Exception("同步失败: "+e.getMessage());}
+					catch(Exception ex){throw new Exception("同步失败: "+ex.getMessage());}
 				}
 				return one((int)id);
 			}
@@ -273,7 +273,7 @@ public class J extends CordovaPlugin{
 					if(ii.has("tags")&&!ii.optString("tags").isEmpty()){
 						String[] ts=ii.optString("tags").split(",");
 						w.append(" AND (");
-						for(int i=0;i<ts.length();i++){
+						for(int i=0;i<ts.length;i++){
 							if(i>0)w.append(" OR ");
 							w.append("tags LIKE ?");
 							v.add("%"+ts[i].trim()+"%");

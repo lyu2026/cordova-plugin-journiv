@@ -98,7 +98,7 @@ public class S{
 			e.put(v);
 		}
 		x.put("files",e);
-		String o=call("/jobs/files/remove","POST",x.string());
+		String o=call("/jobs/files/remove","POST",x.toString());
 		return new JSONObject(o);
 	}
 
@@ -146,10 +146,10 @@ public class S{
 		if(ii==null||ii.isEmpty()||ii.startsWith(X+"/files/"))return ii;
 		byte[] b=ii.startsWith("http")?fetch(ii):cread(ii);
 		String[] v=ii.split("\\?")[0].split("\\.");
-		String x=v[v.length()-1];
+		String x=v[v.length-1];
 		if(x.contains("/")){
 			v=x.split("/");
-			x=v[v.length()-1];
+			x=v[v.length-1];
 		}
 		x=(x!=null&&!x.isEmpty())?("."+x):"";
 		String o=p+"ii"+System.currentTimeMillis()+x;
