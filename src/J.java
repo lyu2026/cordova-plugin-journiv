@@ -224,17 +224,6 @@ public class J extends CordovaPlugin{
 			}
 		}
 
-		// [D.srm] 删除远程文件 - x=JSON数组字符串
-		private void srm(S ii,String x){
-			try{
-				JSONArray o=new JSONArray(x);
-				for(int i=0;i<o.length();i++){
-					String n=o.getString(i);
-					if(n.startsWith("/tyan/files/"))ii.srm(n);
-				}
-			}catch(Exception e){}
-		}
-
 		// [D.list] 查询所有记录(不解密内容)
 		JSONArray list(){
 			synchronized(L){
