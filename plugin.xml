@@ -1,19 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-koofr" version="1.0.0">
-	<name>koofr</name>
-	<js-module src="www/o.js" name="koofr">
-		<clobbers target="cordova.plugin.koofr"/>
+
+	<name>Koofr</name>
+	<description>Cordova plugin for Koofr cloud storage</description>
+	<license>MIT</license>
+	<keywords>cordova,koofr,cloud,storage</keywords>
+	<dependency id="cordova-plugin-advanced-http" version="*" />
+
+	<js-module src="koofr.js" name="koofr">
+		<clobbers target="cordova.plugins.koofr" />
 	</js-module>
+
 	<platform name="android">
-		<framework src="com.squareup.okhttp3:okhttp:4.12.0"/>
-		<config-file target="AndroidManifest.xml" parent="/*">
-			<uses-permission android:name="android.permission.INTERNET"/>
-		</config-file>
-		<config-file target="config.xml" parent="/*">
-			<feature name="koofr">
-				<param name="android-package" value="com.koofr.plugin.O"/>
+		<config-file target="res/xml/config.xml" parent="/*">
+			<feature name="KoofrPlugin">
+				<param name="android-package" value="com.koofr.cordova.KoofrPlugin" />
 			</feature>
 		</config-file>
-		<source-file src="src/O.java" target-dir="src/com/koofr/plugin"/>
+
+		<source-file src="KoofrPlugin.java" target-dir="src/com/koofr/cordova" />
 	</platform>
 </plugin>
