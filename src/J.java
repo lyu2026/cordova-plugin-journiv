@@ -13,159 +13,352 @@ import org.json.*;
 import java.util.*;
 
 public class J extends CordovaPlugin{
+	// 时区: 东八区
+	static final TimeZone Z=TimeZone.getTimeZone("Asia/Shanghai");
+	// AES加密密钥(32字节)和初始化向量(16字节)
 	private static final String K="abcdefghijklmnopqrstuvwxyz123456",V="abcdefghijklmnop";
-	static final TimeZone TZ=TimeZone.getTimeZone("Asia/Shanghai");
-	private D d;private K s;private M m;private T t;private P p;
+	// 各功能模块实例
+	private D _d; // 数据库
+	private S _s; // 客户端
+	private X _x; // 导出
+	private R _r; // 提醒
+	private T _t; // 统计
 
-	public void initialize(CordovaInterface c,CordovaWebView w){
-		super.initialize(c,w);Context x=c.getContext();
-		d=new D(x);s=new K(x);m=new M(x);t=new T(x);p=new P(x);
+	// [J.initialize] 初始化
+	public void initialize(CordovaInterface _,CordovaWebView w){
+		super.initialize(_,w);
+		Context c=_.getContext();
+		_d=new D(c);_s=new S(c);_x=new X(c);_r=new R(c);_t=new T(c);
 	}
 
-	public boolean execute(String a,JSONArray r,CallbackContext b)throws JSONException{
-		try{
-			switch(a){
-				case "sync":cordova.getThreadPool().execute(()->{try{b.success(s.sync(d,r.optBoolean(0,true)));}catch(Exception e){b.error(e.getMessage());}});return true;
-				case "save":{JSONObject o=r.getJSONObject(0);b.success(d.save(o,r.optBoolean(1,true),r.optBoolean(2,false)?null:s));break;}
-				case "remove":{Object v=r.get(0);int[] ids=v instanceof JSONArray?ja((JSONArray)v):new int[]{r.getInt(0)};d.remove(ids,r.optBoolean(1,false)?s:null);b.success();break;}
-				case "page":b.success(d.page(r.optJSONObject(0),r.optInt(1,1),r.optInt(2,20)));break;
-				case "one":b.success(d.one(r.getInt(0)));break;
-				case "multi":b.success(d.multi(ja(r.getJSONArray(0))));break;
-				case "memory":b.success(d.mem());break;
-				case "clear":{int v=r.optInt(0,0);if(v==0){d.clear(s);s.clear();}else if(v==1)d.clear(null);else s.clear();b.success();break;}
-				case "export":b.success(p.exp(ja2(r.getJSONArray(0)),r.getString(1),d));break;
-				case "summary":b.success(t.sum(d));break;
-				case "config":m.cfg(r.getJSONObject(0));b.success();break;
-				default:b.error("?"+a);return false;
+	// [J.execute] 执行JS端发来的操作 _=操作名称 x=参数 c=回调
+	public boolean execute(String _,JSONArray x,CallbackContext c)throws JSONException{
+		try{switch(_){
+			// 配置提醒 - 设置每天提醒时间
+			case "config":
+				_r.config(x.getJSONObject(0));
+				c.success();
+				break;
+			// 同步 - true=本地覆盖线上 false=线上覆盖本地
+			case "sync":
+				cordova.getThreadPool().execute(()->{
+					try{c.success(_s.sync(_d,x.optBoolean(0,true)));}
+					catch(Exception e){c.error(e.getMessage());}
+				});
+				return true;
+			// 保存记录(增/改) - 参数:数据对象,不存在时是否插入,是否同步
+			case "save":{
+				JSONObject o=x.getJSONObject(0);
+				c.success(_d.save(o,x.optBoolean(1,true),true,x.optBoolean(2,false)?null:_s,x.optBoolean(2,false)));
+				break;
 			}
-		}catch(Exception e){b.error(e.getMessage());}
+			// 删除记录 - 参数:id或id数组,是否同步删除线上
+			case "remove":{
+				Object v=x.get(0);
+				int[] s=v instanceof JSONArray?iaay((JSONArray)v):new int[]{x.getInt(0)};
+				_d.remove(s,x.optBoolean(1,false)?_s:null);
+				c.success();
+				break;
+			}
+			// 分页查询 - 参数:查询条件,页码,每页条数
+			case "page":
+				c.success(_d.page(x.optJSONObject(0),x.optInt(1,1),x.optInt(2,20)));
+				break;
+			// 单条查询 - 参数:记录id
+			case "one":
+				c.success(_d.one(x.optInt(0)));
+				break;
+			// 多条查询 - 参数:id数组
+			case "list":
+				c.success(_d.list(iaay(x.getJSONArray(0))));
+				break;
+			// 那年今日 - 获取以往年份今日的记录
+			case "memory":
+				c.success(_d.memory());
+				break;
+			// 清空 - 0=本地+线上 1=只本地 2=只线上
+			case "clear":{
+				int v=x.optInt(0,0);
+				if(v==0){_d.clear(_s);_s.clear();}
+				else if(v==1)_d.clear(null);
+				else _s.clear();
+				c.success();
+				break;
+			}
+			// 导出 - 参数:[开始时间戳,结束时间戳],格式(json/pdf)
+			case "export":
+				c.success(_x.export(itwo(x.getJSONArray(0)),x.getString(1),_d));
+				break;
+			// 统计 - 获取日记统计数据
+			case "summary":
+				c.success(_t.summary(_d));
+				break;
+			default:
+				c.error("未知操作: "+_);
+				return false;
+		}}catch(Exception e){c.error(e.getMessage());}
 		return true;
 	}
 
-	private int[] ja(JSONArray a)throws JSONException{int[] r=new int[a.length()];for(int i=0;i<r.length;i++)r[i]=a.getInt(i);return r;}
-	private long[] ja2(JSONArray a)throws JSONException{return new long[]{a.getLong(0),a.getLong(1)};}
-
-	static String enc(String x)throws Exception{Cipher c=Cipher.getInstance("AES/CBC/PKCS5Padding");c.init(Cipher.ENCRYPT_MODE,new SecretKeySpec(K.getBytes("UTF-8"),"AES"),new IvParameterSpec(V.getBytes("UTF-8")));return Base64.encodeToString(c.doFinal(x.getBytes("UTF-8")),Base64.NO_WRAP);}
-	static String dec(String x)throws Exception{Cipher c=Cipher.getInstance("AES/CBC/PKCS5Padding");c.init(Cipher.DECRYPT_MODE,new SecretKeySpec(K.getBytes("UTF-8"),"AES"),new IvParameterSpec(V.getBytes("UTF-8")));return new String(c.doFinal(Base64.decode(x,Base64.NO_WRAP)),"UTF-8");}
-
-	static JSONObject ft(String ts){
-		JSONObject o=new JSONObject();
-		try{
-			long t=Long.parseLong(ts);Calendar c=Calendar.getInstance(TZ);c.setTimeInMillis(t);
-			int y=c.get(Calendar.YEAR),M=c.get(Calendar.MONTH),d=c.get(Calendar.DATE);
-			int h=c.get(Calendar.HOUR_OF_DAY),m=c.get(Calendar.MINUTE),s=c.get(Calendar.SECOND);
-			int w=c.get(Calendar.DAY_OF_WEEK)-1;
-			String[] W={"日","一","二","三","四","五","六"};
-			String[] MN={"元","二","三","四","五","六","七","八","九","十","十一","腊"};
-			o.put("d",(d<10?"0":"")+d);
-			o.put("m",MN[M]+"月");
-			o.put("y",y);
-			o.put("w","周"+W[w]);
-			o.put("t",(h<10?"0":"")+h+":"+(m<10?"0":"")+m+":"+(s<10?"0":"")+s);
-		}catch(Exception e){}
+	// [J.iaay] JSONArray转int数组
+	private int[] iaay(JSONArray _)throws JSONException{
+		int[] o=new int[_.length()];
+		for(int i=0;i<_.length();i++)o[i]=_.getInt(i);
 		return o;
 	}
+	// [J.itwo] JSONArray转long数组(两个元素:开始和结束时间戳)
+	private long[] itwo(JSONArray _)throws JSONException{
+		return new long[]{_.getLong(0),_.getLong(1)};
+	}
 
+	// [J.encode] AES加密 - 明文转Base64密文
+	static String encode(String _)throws Exception{
+		Cipher o=Cipher.getInstance("AES/CBC/PKCS5Padding");
+		o.init(Cipher.ENCRYPT_MODE,new SecretKeySpec(K.getBytes("UTF-8"),"AES"),new IvParameterSpec(V.getBytes("UTF-8")));
+		return Base64.encodeToString(o.doFinal(_.getBytes("UTF-8")),Base64.NO_WRAP);
+	}
+	// [J.decode] AES解密 - Base64密文转明文
+	static String decode(String _)throws Exception{
+		Cipher o=Cipher.getInstance("AES/CBC/PKCS5Padding");
+		o.init(Cipher.DECRYPT_MODE,new SecretKeySpec(K.getBytes("UTF-8"),"AES"),new IvParameterSpec(V.getBytes("UTF-8")));
+		return new String(o.doFinal(Base64.decode(_,Base64.NO_WRAP)),"UTF-8");
+	}
+
+
+
+	// 数据库操作内部类 - SQLite增删改查
 	class D extends SQLiteOpenHelper{
-		private final Object L=new Object();
+		private final Object L=new Object(); // 同步锁
+		D(Context _){super(_,"journiv",null,2);}
+		public void onCreate(SQLiteDatabase _){
+			_.execSQL("CREATE TABLE O(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,content TEXT,mood TEXT,tags TEXT,imgs TEXT DEFAULT '[]',files TEXT DEFAULT '[]',lat REAL,lng REAL,addr TEXT,at TEXT)");
+		}
+		public void onUpgrade(SQLiteDatabase _,int o,int n){
+			_.execSQL("DROP TABLE IF EXISTS O");
+			onCreate(_);
+		}
 
-		D(Context x){super(x,"Journiv",null,2);}
-		public void onCreate(SQLiteDatabase d){d.execSQL("CREATE TABLE o(id INTEGER PRIMARY KEY AUTOINCREMENT,title TEXT,content TEXT,mood TEXT,tags TEXT,imgs TEXT DEFAULT '[]',files TEXT DEFAULT '[]',lat REAL,lng REAL,addr TEXT,at TEXT)");}
-		public void onUpgrade(SQLiteDatabase d,int o,int n){d.execSQL("DROP TABLE IF EXISTS o");onCreate(d);}
+		// [D.fill] 填充记录 - e=true加密content字段
+		private ContentValues fill(JSONObject _,boolean e)throws Exception{
+			ContentValues o=new ContentValues();
+			o.put("title",_.optString("title"));
+			o.put("content",e?encode(_.optString("content")):_.optString("content"));
+			o.put("mood",_.optString("mood"));
+			o.put("tags",_.optString("tags"));
+			Object si=_.opt("imgs"),sf=_.opt("files");
+			o.put("imgs",si instanceof JSONArray?si.toString():(si instanceof String?(String)si:"[]"));
+			o.put("files",sf instanceof JSONArray?sf.toString():(sf instanceof String?(String)sf:"[]"));
+			if(_.has("lat"))o.put("lat",_.getDouble("lat"));
+			if(_.has("lng"))o.put("lng",_.getDouble("lng"));
+			if(_.has("at"))o.put("at",_.optString("at"));
+			return o;
+		}
 
-		JSONObject save(JSONObject o,boolean ins,K s)throws Exception{
+		// [D.save] 保存记录 - i=不存在时插入 e=加密 _s=网络客户端 s=同步
+		JSONObject save(JSONObject _,boolean i,boolean e,S _s,boolean s)throws Exception{
 			synchronized(L){
-				SQLiteDatabase db=getWritableDatabase();ContentValues v=new ContentValues();
-				long id=o.optLong("id",0);
-				JSONArray oi=null,of=null;
+				SQLiteDatabase z=getWritableDatabase();
+				ContentValues x=fill(_,e);
+				long id=_.optLong("id",0);
+				JSONArray si=null,sf=null;
 				if(id>0){
-					Cursor c=db.query("o",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);
+					x.put("id",id);
+					if(!x.containsKey("at"))x.put("at",String.valueOf(System.currentTimeMillis()));
+					Cursor c=z.query("O",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);
 					if(c.moveToFirst()){
-						if(s!=null){try{oi=new JSONArray(c.getString(0));}catch(Exception e){}try{of=new JSONArray(c.getString(1));}catch(Exception e){}}
-						c.close();fil(v,o);db.update("o",v,"id=?",new String[]{String.valueOf(id)});
+						if(s&&_s!=null){
+							try{si=new JSONArray(c.getString(0));}catch(Exception ex){}
+							try{sf=new JSONArray(c.getString(1));}catch(Exception ex){}
+						}
+						c.close();
+						z.update("O",x,"id=?",new String[]{String.valueOf(id)});
 					}else{
 						c.close();
-						if(!ins){db.close();throw new Exception("记录 "+id+" 不存在");}
-						fil(v,o);id=db.insert("o",null,v);
+						if(!i){z.close();throw new Exception("记录 "+id+" 不存在");}
+						id=z.insert("O",null,x);
+						z.close();
 					}
-				}else{fil(v,o);id=db.insert("o",null,v);}
-				db.close();
-				if(s!=null){try{o.put("id",id);s.upr(id,o,oi,of);}catch(Exception e){throw new Exception("同步失败: "+e.getMessage());}}
+				}else{
+					id=z.insert("O",null,x);
+					z.close();
+				}
+				if(s&&_s!=null){
+					try{_.put("id",id);_s.xpload(_,id,si,sf);}
+					catch(Exception e){throw new Exception("同步失败: "+e.getMessage());}
+				}
 				return one((int)id);
 			}
 		}
 
-		private void fil(ContentValues v,JSONObject o)throws Exception{
-			v.put("title",o.optString("title"));v.put("content",enc(o.optString("content")));
-			v.put("mood",o.optString("mood"));v.put("tags",o.optString("tags"));
-			Object im=o.opt("imgs");v.put("imgs",im instanceof JSONArray?im.toString():(im instanceof String?(String)im:"[]"));
-			Object fi=o.opt("files");v.put("files",fi instanceof JSONArray?fi.toString():(fi instanceof String?(String)fi:"[]"));
-			if(o.has("lat"))v.put("lat",o.getDouble("lat"));if(o.has("lng"))v.put("lng",o.getDouble("lng"));
-			v.put("addr",o.optString("addr",""));
-			v.put("at",String.valueOf(Calendar.getInstance(TZ).getTimeInMillis()));
-		}
-
-		void raw(JSONObject o)throws Exception{
+		// [D.remove] 删除记录 - _=要删除的id数组 _s=网络客户端(非null时同步删除线上)
+		void remove(int[] _,S _s)throws Exception{
 			synchronized(L){
-				SQLiteDatabase db=getWritableDatabase();ContentValues v=new ContentValues();
-				long id=o.optLong("id",0);
-				v.put("title",o.optString("title"));v.put("content",o.optString("content"));
-				v.put("mood",o.optString("mood"));v.put("tags",o.optString("tags"));
-				Object im=o.opt("imgs");v.put("imgs",im instanceof JSONArray?im.toString():(im instanceof String?(String)im:"[]"));
-				Object fi=o.opt("files");v.put("files",fi instanceof JSONArray?fi.toString():(fi instanceof String?(String)fi:"[]"));
-				if(o.has("lat"))v.put("lat",o.getDouble("lat"));if(o.has("lng"))v.put("lng",o.getDouble("lng"));
-				v.put("addr",o.optString("addr",""));v.put("at",o.optString("at",String.valueOf(Calendar.getInstance(TZ).getTimeInMillis())));
-				if(id>0){db.update("o",v,"id=?",new String[]{String.valueOf(id)});}else{db.insert("o",null,v);}
-				db.close();
-			}
-		}
-
-		void remove(int[] ids,K s)throws Exception{
-			synchronized(L){
-				SQLiteDatabase db=getWritableDatabase();
-				for(int id:ids){if(s!=null){Cursor c=db.query("o",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);if(c.moveToFirst()){delr(s,c.getString(0));delr(s,c.getString(1));}c.close();s.delr(id);}db.delete("o","id=?",new String[]{String.valueOf(id)});}
-				db.close();
-			}
-		}
-
-		void clear(K s)throws Exception{
-			synchronized(L){
-				if(s!=null){Cursor c=getReadableDatabase().rawQuery("SELECT imgs,files FROM o",null);while(c.moveToNext()){delr(s,c.getString(0));delr(s,c.getString(1));}c.close();}
-				getWritableDatabase().delete("o",null,null);
-			}
-		}
-
-		private void delr(K s,String j){try{JSONArray a=new JSONArray(j);for(int i=0;i<a.length();i++){String u=a.getString(i);if(u.startsWith("/"))try{s.delf(u);}catch(Exception e){}}}catch(Exception e){}}
-
-		void upl(long id,String imgs,String files){synchronized(L){ContentValues v=new ContentValues();v.put("imgs",imgs);v.put("files",files);getWritableDatabase().update("o",v,"id=?",new String[]{String.valueOf(id)});}}
-
-		JSONArray all(){synchronized(L){JSONArray a=new JSONArray();Cursor c=getReadableDatabase().rawQuery("SELECT * FROM o ORDER BY at DESC",null);while(c.moveToNext())a.put(row(c));c.close();return a;}}
-
-		JSONObject row(Cursor c){JSONObject o=new JSONObject();try{o.put("id",c.getLong(0));o.put("title",c.getString(1));try{o.put("content",dec(c.getString(2)));}catch(Exception e){o.put("content",c.getString(2));}o.put("mood",c.getString(3));o.put("tags",c.getString(4));o.put("imgs",new JSONArray(c.getString(5)));o.put("files",new JSONArray(c.getString(6)));o.put("lat",c.getDouble(7));o.put("lng",c.getDouble(8));o.put("addr",c.getString(9));o.put("at",c.getString(10));o.put("ao",ft(c.getString(10)));}catch(Exception e){}return o;}
-
-		JSONObject page(JSONObject q,int pg,int sz)throws Exception{
-			synchronized(L){
-				StringBuilder w=new StringBuilder(" WHERE 1=1");List<String> p=new ArrayList<>();
-				if(q!=null){
-					if(q.has("kw")&&!q.optString("kw").isEmpty()){w.append(" AND (title LIKE ? OR content LIKE ? OR tags LIKE ?)");String k="%"+q.optString("kw")+"%";p.add(k);p.add(k);p.add(k);}
-					if(q.has("mood")&&!q.optString("mood").isEmpty()){w.append(" AND mood=?");p.add(q.optString("mood"));}
-					if(q.has("tags")&&!q.optString("tags").isEmpty()){String[] ts=q.optString("tags").split(",");w.append(" AND (");for(int i=0;i<ts.length;i++){if(i>0)w.append(" OR ");w.append("tags LIKE ?");p.add("%"+ts[i].trim()+"%");}w.append(")");}
-					if(q.has("start")){w.append(" AND at >= ?");p.add(q.optString("start"));}
-					if(q.has("end")){w.append(" AND at <= ?");p.add(q.optString("end"));}
+				SQLiteDatabase z=getWritableDatabase();
+				JSONArray ns=new JSONArray();
+				for(int id:_){
+					if(_s!=null){
+						Cursor c=z.query("O",new String[]{"imgs","files"},"id=?",new String[]{String.valueOf(id)},null,null,null);
+						if(c.moveToFirst()){
+							JSONArray s=new JSONArray(c.getString(0));
+							for(int i=0;i<s.length();i++){
+								String n=s.getString(i);
+								if(n.startsWith("/tyan/files/"))ns.put(n.replaceFirst("/tyan/",""));
+							}
+							s=new JSONArray(c.getString(1));
+							for(int i=0;i<s.length();i++){
+								String n=s.getString(i);
+								if(n.startsWith("/tyan/files/"))ns.put(n.replaceFirst("/tyan/",""));
+							}
+						}
+						ns.put(id+".json");
+						c.close();
+					}
+					z.delete("O","id=?",new String[]{String.valueOf(id)});
 				}
-				int total=ct(w.toString(),p.toArray(new String[0]));
-				w.append(" ORDER BY at DESC LIMIT ? OFFSET ?");p.add(String.valueOf(sz));p.add(String.valueOf((pg-1)*sz));
-				JSONArray a=new JSONArray();Cursor c=getReadableDatabase().rawQuery("SELECT * FROM o"+w.toString(),p.toArray(new String[0]));while(c.moveToNext())a.put(row(c));c.close();
-				JSONObject r=new JSONObject();r.put("data",a);r.put("total",total);r.put("page",pg);r.put("size",sz);return r;
+				z.close();
+				if(_s!=null)_s.remove(ns);
 			}
 		}
 
-		int ct(String w,String[] a){Cursor c=getReadableDatabase().rawQuery("SELECT COUNT(*) FROM o"+w,a);c.moveToFirst();int n=c.getInt(0);c.close();return n;}
+		// [D.clear] 清空表 - _=网络客户端(非null时删除远程文件)
+		void clear(S _)throws Exception{
+			synchronized(L){
+				getWritableDatabase().delete("O",null,null);
+				if(_!=null)_.clear();
+			}
+		}
 
-		JSONObject one(int id){synchronized(L){Cursor c=getReadableDatabase().query("o",null,"id=?",new String[]{String.valueOf(id)},null,null,null);JSONObject o=c.moveToFirst()?row(c):new JSONObject();c.close();return o;}}
+		// [D.srm] 删除远程文件 - x=JSON数组字符串
+		private void srm(S _,String x){
+			try{
+				JSONArray o=new JSONArray(x);
+				for(int i=0;i<o.length();i++){
+					String n=o.getString(i);
+					if(n.startsWith("/tyan/files/"))_.srm(n);
+				}
+			}catch(Exception e){}
+		}
 
-		JSONArray multi(int[] ids){synchronized(L){JSONArray a=new JSONArray();for(int id:ids){JSONObject o=one(id);if(o.has("id"))a.put(o);}return a;}}
+		// [D.list] 查询所有记录(不解密内容)
+		JSONArray list(){
+			synchronized(L){
+				JSONArray o=new JSONArray();
+				Cursor c=getReadableDatabase().rawQuery("SELECT * FROM O ORDER BY at DESC",null);
+				while(c.moveToNext())o.put(rbuild(c));
+				c.close();
+				return o;
+			}
+		}
 
-		JSONArray mem(){synchronized(L){JSONArray a=new JSONArray();Calendar c=Calendar.getInstance(TZ);int y=c.get(Calendar.YEAR);for(int i=1;i<=10;i++){c.set(Calendar.YEAR,y-i);String d=new SimpleDateFormat("MM-dd",Locale.getDefault()).format(c.getTime());Cursor cu=getReadableDatabase().rawQuery("SELECT * FROM o WHERE at LIKE ? ORDER BY at DESC",new String[]{"%"+d+"%"});JSONArray r=new JSONArray();while(cu.moveToNext())r.put(row(cu));cu.close();if(r.length()>0)a.put(r);}return a;}}
+		// [D.rbuild] 行数据转JSON对象 - 解密content字段
+		JSONObject rbuild(Cursor _){
+			JSONObject o=new JSONObject();
+			try{
+				o.put("id",_.getLong(0));
+				o.put("title",_.getString(1));
+				try{o.put("content",decode(_.getString(2)));}catch(Exception e){o.put("content",_.getString(2));}
+				o.put("mood",_.getString(3));
+				o.put("tags",_.getString(4));
+				o.put("imgs",new JSONArray(_.getString(5)));
+				o.put("files",new JSONArray(_.getString(6)));
+				o.put("lat",_.getDouble(7));
+				o.put("lng",_.getDouble(8));
+				o.put("addr",_.getString(9));
+				o.put("at",_.getString(10));
+			}catch(Exception e){}
+			return o;
+		}
+
+		// [D.page] 分页查询 - _=查询条件 p=页码 s=每页条数
+		JSONObject page(JSONObject _,int p,int s)throws Exception{
+			synchronized(L){
+				List<String> v=new ArrayList<>();
+				StringBuilder w=new StringBuilder(" WHERE 1=1");
+				if(_!=null){
+					if(_.has("kw")&&!_.optString("kw").isEmpty()){
+						w.append(" AND (title LIKE ? OR tags LIKE ?)");
+						String k="%"+_.optString("kw")+"%";
+						v.add(k);
+						v.add(k);
+					}
+					if(_.has("mood")&&!_.optString("mood").isEmpty()){
+						w.append(" AND mood=?");
+						v.add(_.optString("mood"));
+					}
+					if(_.has("tags")&&!_.optString("tags").isEmpty()){
+						String[] ts=_.optString("tags").split(",");
+						w.append(" AND (");
+						for(int i=0;i<ts.length();i++){
+							if(i>0)w.append(" OR ");
+							w.append("tags LIKE ?");
+							v.add("%"+ts[i].trim()+"%");
+						}
+						w.append(")");
+					}
+					if(_.has("start")){w.append(" AND at>=?");v.add(_.optString("start"));}
+					if(_.has("end")){w.append(" AND at<=?");v.add(_.optString("end"));}
+				}
+				int t=count(w.toString(),v.toArray(new String[0]));
+				w.append(" ORDER BY at DESC LIMIT ? OFFSET ?");
+				v.add(String.valueOf(s));
+				v.add(String.valueOf((p-1)*s));
+				JSONArray x=new JSONArray();
+				Cursor c=getReadableDatabase().rawQuery("SELECT * FROM O"+w.toString(),v.toArray(new String[0]));
+				while(c.moveToNext())x.put(rbuild(c));
+				c.close();
+				JSONObject o=new JSONObject();
+				o.put("list",x);o.put("total",t);o.put("page",p);o.put("size",s);
+				return o;
+			}
+		}
+
+		// [D.count] 计数 - 返回符合条件的记录总数
+		int count(String _,String[] s){
+			Cursor c=getReadableDatabase().rawQuery("SELECT COUNT(*) FROM O"+_,s);
+			c.moveToFirst();
+			int o=c.getInt(0);
+			c.close();
+			return o;
+		}
+
+	// [D.trange] 按时间范围查询 - s=开始时间戳 e=结束时间戳
+	JSONArray trange(long s,long e){
+		synchronized(L){
+			JSONArray o=new JSONArray();
+			Cursor c=getReadableDatabase().rawQuery("SELECT * FROM O WHERE at>=? AND at<=? ORDER BY at DESC",new String[]{String.valueOf(s),String.valueOf(e)});
+			while(c.moveToNext())o.put(rbuild(c));
+			c.close();
+			return o;
+		}
+	}
+
+		// [D.one] 单条查询 - 根据id返回记录
+		JSONObject one(int _){
+			synchronized(L){
+				Cursor c=getReadableDatabase().query("O",null,"id=?",new String[]{String.valueOf(_)},null,null,null);
+				JSONObject o=c.moveToFirst()?rbuild(c):new JSONObject();
+				c.close();
+				return o;
+			}
+		}
+
+		// [D.memory] 那年今日 - 获取最近10年同月同日的记录
+		JSONArray memory(){
+			synchronized(L){
+				JSONArray o=new JSONArray();
+				Calendar z=Calendar.getInstance(Z);
+				int y=z.get(Calendar.YEAR);
+				String x=String.format("%02d",(z.get(Calendar.MONTH)+1))+"-"+String.format("%02d",z.get(Calendar.DATE));
+				for(int i=1;i<=10;i++){
+					Cursor c=getReadableDatabase().rawQuery("SELECT * FROM O WHERE strftime('%y-%m-%d',at/1000,'unixepoch')=? ORDER BY at DESC",new String[]{y+"-"+x});
+					JSONArray _=new JSONArray();
+					while(c.moveToNext())_.put(rbuild(c));
+					c.close();
+					if(_.length()>0)o.put(_);
+					y=y-1;
+				}
+				return o;
+			}
+		}
 	}
 }

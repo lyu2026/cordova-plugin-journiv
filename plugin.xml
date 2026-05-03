@@ -1,31 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-journiv" version="1.0.0">
 	<name>journiv</name>
-	<js-module src="www/j.js" name="journiv"><clobbers target="cordova.plugin.journiv"/></js-module>
+	<js-module src="www/j.js" name="journiv">
+		<clobbers target="cordova.plugin.journiv"/>
+	</js-module>
 	<platform name="android">
 		<config-file target="AndroidManifest.xml" parent="/*">
 			<uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
-			<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-			<uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
-			<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 			<uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 			<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 			<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 			<uses-permission android:name="android.permission.INTERNET"/>
-			<uses-permission android:name="android.permission.VIBRATE"/>
 		</config-file>
 		<config-file target="AndroidManifest.xml" parent="/manifest/application">
-			<receiver android:name="com.j.plugin.M$R" android:exported="false"><intent-filter><action android:name="com.j.REMIND"/></intent-filter></receiver>
-			<receiver android:name="com.j.plugin.M$B" android:exported="false"><intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/></intent-filter></receiver>
+			<receiver android:name="com.j.plugin.M$R" android:exported="false">
+				<intent-filter><action android:name="com.j.REMIND"/></intent-filter>
+			</receiver>
+			<receiver android:name="com.j.plugin.M$B" android:exported="false">
+				<intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/></intent-filter>
+			</receiver>
 		</config-file>
 		<config-file target="res/xml/config.xml" parent="/*">
 			<feature name="journiv"><param name="android-package" value="com.j.plugin.J"/></feature>
 		</config-file>
 		<source-file src="src/J.java" target-dir="src/com/j/plugin"/>
-		<source-file src="src/K.java" target-dir="src/com/j/plugin"/>
+		<source-file src="src/S.java" target-dir="src/com/j/plugin"/>
 		<source-file src="src/M.java" target-dir="src/com/j/plugin"/>
 		<source-file src="src/T.java" target-dir="src/com/j/plugin"/>
-		<source-file src="src/P.java" target-dir="src/com/j/plugin"/>
+		<source-file src="src/X.java" target-dir="src/com/j/plugin"/>
+		<framework src="com.squareup.okhttp3:okhttp:4.12.0"/>
 		<framework src="androidx.core:core:1.12.0"/>
 	</platform>
 </plugin>
