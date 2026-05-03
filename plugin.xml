@@ -21,7 +21,10 @@
 			</receiver>
 		</config-file>
 		<config-file target="res/xml/config.xml" parent="/*">
-			<feature name="journiv"><param name="android-package" value="com.j.plugin.J"/></feature>
+			<feature name="journiv">
+				<param name="android-package" value="com.j.plugin.J"/>
+				<param name="onload" value="true"/>
+			</feature>
 		</config-file>
 		<source-file src="src/J.java" target-dir="src/com/j/plugin"/>
 		<source-file src="src/S.java" target-dir="src/com/j/plugin"/>
