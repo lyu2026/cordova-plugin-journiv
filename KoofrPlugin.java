@@ -43,8 +43,6 @@ public class KoofrPlugin extends CordovaPlugin{
 		String u=(p.contains("/files/put?")||p.contains("/files/get/")?K:H)+p;
 		HttpRequest r="GET".equals(m)?HttpRequest.get(u):HttpRequest.post(u);
 		r.header("Authorization","Basic "+Base64.encodeToString((U+":"+P).getBytes(),Base64.NO_WRAP));
-		r.trustAllCerts();
-		r.trustAllHosts();
 		if(b!=null&&b.length>0){r.contentType(t!=null?t:"application/octet-stream");r.send(b);}
 		if(r.ok())return r.body();
 		throw new Exception(r.code()+" "+r.message());
