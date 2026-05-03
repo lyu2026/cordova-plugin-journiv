@@ -22,14 +22,14 @@ public class S{
 	private OkHttpClient Z; // HTTP客户端
 	private Context C; // Android上下文
 
-	S(Context _){
-		this.C=_;
+	S(Context ii){
+		this.C=ii;
 		Z=new OkHttpClient.Builder()
 			.readTimeout(10,TimeUnit.SECONDS)
 			.connectTimeout(10,TimeUnit.SECONDS)
 			.sslSocketFactory(tls(),new X509TrustManager(){
-				public void checkClientTrusted(X509Certificate[] _,String a){}
-				public void checkServerTrusted(X509Certificate[] _,String a){}
+				public void checkClientTrusted(X509Certificate[] ii,String a){}
+				public void checkServerTrusted(X509Certificate[] ii,String a){}
 				public X509Certificate[] getAcceptedIssuers(){return new X509Certificate[0];}
 			}).hostnameVerifier((h,s)->true).build();
 	}
@@ -37,18 +37,18 @@ public class S{
 		try{
 			SSLContext s=SSLContext.getInstance("TLS");
 			s.init(null,new TrustManager[]{new X509TrustManager(){
-				public void checkClientTrusted(X509Certificate[] _,String a){}
-				public void checkServerTrusted(X509Certificate[] _,String a){}
+				public void checkClientTrusted(X509Certificate[] ii,String a){}
+				public void checkServerTrusted(X509Certificate[] ii,String a){}
 				public X509Certificate[] getAcceptedIssuers(){return new X509Certificate[0];}
 			}},new java.security.SecureRandom());
 			return s.getSocketFactory();
 		}catch(Exception e){return null;}
 	}
 
-	// [S.call] HTTP请求 - _=路径 m=方法 x=请求数据
-	private String call(String _,String m,String x)throws Exception{
-		String u=H+_;
-		if(_.contains("/files/put?")||_.contains("/files/get/"))u="https://app.koofr.net/content/api/v2"+_;
+	// [S.call] HTTP请求 - ii=路径 m=方法 x=请求数据
+	private String call(String ii,String m,String x)throws Exception{
+		String u=H+ii;
+		if(ii.contains("/files/put?")||ii.contains("/files/get/"))u="https://app.koofr.net/content/api/v2"+ii;
 		Request.Builder r=new Request.Builder().url(u).header("Authorization","Basic "+Base64.encodeToString((U+":"+P).getBytes(),Base64.NO_WRAP));
 		if(x!=null&&!x.isEmpty())r.method(m,RequestBody.create(x,MediaType.parse(x.startsWith("{")?"application/json":"application/octet-stream")));
 		else r.method(m,null);
@@ -66,14 +66,14 @@ public class S{
 	}
 
 	// [S.list] 列出文件
-	JSONArray list(String _)throws Exception{
-		String o=call("/mounts/"+mid()+"/bundle?path="+java.net.URLEncoder.encode(_,"UTF-8"),"GET",null);
+	JSONArray list(String ii)throws Exception{
+		String o=call("/mounts/"+mid()+"/bundle?path="+java.net.URLEncoder.encode(ii,"UTF-8"),"GET",null);
 		return new JSONObject(o).optJSONArray("files");
 	}
 
 	// [S.upload] 上传文件
-	JSONObject upload(String _,String p,byte[] x)throws Exception{
-		String u="https://app.koofr.net/content/api/v2/mounts/"+mid()+"/files/put?path="+java.net.URLEncoder.encode(p,"UTF-8")+"&filename="+java.net.URLEncoder.encode(_,"UTF-8")+"&info=true&overwrite=true";
+	JSONObject upload(String ii,String p,byte[] x)throws Exception{
+		String u="https://app.koofr.net/content/api/v2/mounts/"+mid()+"/files/put?path="+java.net.URLEncoder.encode(p,"UTF-8")+"&filename="+java.net.URLEncoder.encode(ii,"UTF-8")+"&info=true&overwrite=true";
 		Request r=new Request.Builder().url(u).header("Authorization","Basic "+Base64.encodeToString((U+":"+P).getBytes(),Base64.NO_WRAP)).method("POST",RequestBody.create(x,MediaType.parse("application/octet-stream"))).build();
 		try(Response z=Z.newCall(r).execute()){
 			return new JSONObject(z.body().string());
@@ -81,19 +81,19 @@ public class S{
 	}
 
 	// [S.download] 下载文件
-	String download(String _,String p)throws Exception{
-		return call("/mounts/"+mid()+"/files/get/"+_+"?path="+java.net.URLEncoder.encode(p+"/"+_,"UTF-8")+"&force=true","GET",null);
+	String download(String ii,String p)throws Exception{
+		return call("/mounts/"+mid()+"/files/get/"+ii+"?path="+java.net.URLEncoder.encode(p+"/"+ii,"UTF-8")+"&force=true","GET",null);
 	}
 
 	// [S.remove] 删除文件
-	JSONObject remove(JSONArray _)throws Exception{
-		if(_.length()<1)return new JSONObject();
+	JSONObject remove(JSONArray ii)throws Exception{
+		if(ii.length()<1)return new JSONObject();
 		JSONObject x=new JSONObject();
 		JSONArray e=new JSONArray();
 		String m=mid();
-		for(int i=0;i<_.length();i++){
+		for(int i=0;i<ii.length();i++){
 			JSONObject v=new JSONObject();
-			v.put("path",X+"/"+_.optString(i));
+			v.put("path",X+"/"+ii.optString(i));
 			v.put("mountId",m);
 			e.put(v);
 		}
@@ -118,14 +118,14 @@ public class S{
 	}
 
 	// [S.mkdir] 创建档夹
-	void mkdir(String _,String p)throws Exception{
-		call("/mounts/"+mid()+"/files/folder?path="+java.net.URLEncoder.encode(p,"UTF-8"),"POST","{\"name\":\""+_+"\"}");
+	void mkdir(String ii,String p)throws Exception{
+		call("/mounts/"+mid()+"/files/folder?path="+java.net.URLEncoder.encode(p,"UTF-8"),"POST","{\"name\":\""+ii+"\"}");
 	}
 
 	// [S.cread] 读取本地文件 - 支持content://
-	byte[] cread(String _)throws Exception{
-		if(!_.startsWith("content://"))throw new IOException("文件不支持");
-		InputStream z=C.getContentResolver().openInputStream(Uri.parse(_));
+	byte[] cread(String ii)throws Exception{
+		if(!ii.startsWith("content://"))throw new IOException("文件不支持");
+		InputStream z=C.getContentResolver().openInputStream(Uri.parse(ii));
 		ByteArrayOutputStream o=new ByteArrayOutputStream();
 		byte[] x=new byte[4096];int n;
 		while((n=z.read(x))!=-1)o.write(x,0,n);
@@ -134,34 +134,34 @@ public class S{
 	}
 
 	// [S.fetch] 下载URL文件
-	byte[] fetch(String _)throws Exception{
-		try(Response z=Z.newCall(new Request.Builder().url(_).build()).execute()){
+	byte[] fetch(String ii)throws Exception{
+		try(Response z=Z.newCall(new Request.Builder().url(ii).build()).execute()){
 			ResponseBody o=z.body();
 			return o!=null?o.bytes():new byte[0];
 		}
 	}
 
-	// [S.xpload] 上传单个文件(图片/附件) - _=源路径 p=文件名前缀
-	String xpload(String _,String p)throws Exception{
-		if(_==null||_.isEmpty()||_.startsWith(X+"/files/"))return _;
-		byte[] b=_.startsWith("http")?fetch(_):cread(_);
-		String[] v=_.split("\\?")[0].split("\\.");
+	// [S.xpload] 上传单个文件(图片/附件) - ii=源路径 p=文件名前缀
+	String xpload(String ii,String p)throws Exception{
+		if(ii==null||ii.isEmpty()||ii.startsWith(X+"/files/"))return ii;
+		byte[] b=ii.startsWith("http")?fetch(ii):cread(ii);
+		String[] v=ii.split("\\?")[0].split("\\.");
 		String x=v[v.length()-1];
 		if(x.contains("/")){
 			v=x.split("/");
 			x=v[v.length()-1];
 		}
 		x=(x!=null&&!x.isEmpty())?("."+x):"";
-		String o=p+"_"+System.currentTimeMillis()+x;
+		String o=p+"ii"+System.currentTimeMillis()+x;
 		JSONObject z=upload(o,X+"/files",b);
 		return X+"/files/"+z.optString("name",o);
 	}
 
 	// [S.sync] 同步 - x=true本地覆盖线上 false=线上覆盖本地
-	JSONObject sync(J.D _,boolean x)throws Exception{
+	JSONObject sync(J.D ii,boolean x)throws Exception{
 		JSONArray ks=list(X);
 		if(x){ // 本地覆盖线上：先清空远程再上传本地全部
-			JSONArray kf=list(X+"/files"),ls=_.list();
+			JSONArray kf=list(X+"/files"),ls=ii.list();
 			JSONObject os=new JSONObject();
 			for(int i=0;i<kf.length();i++)os.put("files/"+kf.getJSONObject(i).getString("name"),"");
 			for(int i=0;i<ls.length();i++){
@@ -188,7 +188,7 @@ public class S{
 			return new JSONObject().put("ok",true);
 		}
 		// 线上覆盖本地：清空本地再下载远程全部
-		_.clear(null);
+		ii.clear(null);
 		for(int i=0;i<ks.length();i++){
 			JSONObject v=ks.getJSONObject(i);
 			String n=v.getString("name");
@@ -196,15 +196,15 @@ public class S{
 				try{
 					JSONObject o=new JSONObject(J.decode(download(n,X)));
 					o.put("id",Long.parseLong(n.replace(".json","")));
-					_.save(o,true,false,null,false);
+					ii.save(o,true,false,null,false);
 				}catch(Exception e){}
 			}
 		}
 		return new JSONObject().put("ok",true);
 	}
 
-	// [S.log] 上传记录(含图片/附件清理) - _=记录id o=记录数据 oi=旧图片 of=旧附件
-	void log(long _,JSONObject o,JSONArray si,JSONArray sf)throws Exception{
+	// [S.log] 上传记录(含图片/附件清理) - ii=记录id o=记录数据 oi=旧图片 of=旧附件
+	void log(long ii,JSONObject o,JSONArray si,JSONArray sf)throws Exception{
 		JSONArray s=new JSONArray();
 		if(si!=null){ // 删除旧图片
 			for(int i=0;i<si.length();i++){
@@ -223,18 +223,18 @@ public class S{
 		if(o.has("imgs")&&!o.isNull("imgs")){
 			s=o.getJSONArray("imgs");
 			JSONArray x=new JSONArray();
-			for(int i=0;i<s.length();i++)x.put(xpload(s.getString(i),_+"_img_"+i+"_"));
+			for(int i=0;i<s.length();i++)x.put(xpload(s.getString(i),ii+"_img_"+i+"ii"));
 			o.put("imgs",x);
 		}
 		// 上传新附件
 		if(o.has("files")&&!o.isNull("files")){
 			s=o.getJSONArray("files");
 			JSONArray x=new JSONArray();
-			for(int i=0;i<s.length();i++)x.put(xpload(s.getString(i),_+"_file_"+i+"_"));
+			for(int i=0;i<s.length();i++)x.put(xpload(s.getString(i),ii+"_file_"+i+"ii"));
 			o.put("files",x);
 		}
 		// 上传记录JSON文件
-		upload(_+".json",X,J.encode(o.toString()).getBytes("UTF-8"));
+		upload(ii+".json",X,J.encode(o.toString()).getBytes("UTF-8"));
 	}
 
 }
