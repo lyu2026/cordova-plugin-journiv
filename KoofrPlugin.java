@@ -22,17 +22,19 @@ public class KoofrPlugin extends CordovaPlugin{
 
 	@Override
 	public boolean execute(String a,JSONArray x,CallbackContext z){
-		if("up".equals(a)){go(z,()->up(x,z));return true;}
-		if("dn".equals(a)){go(z,()->dn(x,z));return true;}
-		if("rm".equals(a)){go(z,()->rm(x,z));return true;}
-		if("ls".equals(a)){go(z,()->ls(x,z));return true;}
+		if("up".equals(a)){run(z,()->up(x,z));return true;}
+		if("dn".equals(a)){run(z,()->dn(x,z));return true;}
+		if("rm".equals(a)){run(z,()->rm(x,z));return true;}
+		if("ls".equals(a)){run(z,()->ls(x,z));return true;}
 		return false;
 	}
 
-	private void go(Runnable r){cordova.getThreadPool().execute(()->{try{r.run();}catch(Exception e){}});}
+	private interface Task{void run()throws Exception;}
 
-	private void go(CallbackContext z,Runnable r){
-		cordova.getThreadPool().execute(()->{try{r.run();}catch(Exception e){z.error(e.getMessage());}});
+	private void go(Task t){cordova.getThreadPool().execute(()->{try{t.run();}catch(Exception e){}});}
+
+	private void run(CallbackContext z,Task t){
+		cordova.getThreadPool().execute(()->{try{t.run();}catch(Exception e){z.error(e.getMessage());}});
 	}
 
 	private String mid()throws Exception{
