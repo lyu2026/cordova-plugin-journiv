@@ -24,14 +24,14 @@ public class J extends CordovaPlugin{
 	private X _x; // 导出
 	private T _t; // 统计
 
-	// [J.initialize] 初始化
-	public void initialize(CordovaInterface ii,CordovaWebView w){
-		super.initialize(ii,w);
-		Context c=ii.getContext();
-		_d=new D(c);_s=new S(c);_x=new X(c);_m=new M(c);_t=new T(c);
+	@Override
+	protected void pluginInitialize(){
+		super.pluginInitialize();
+		Context c=this.cordova.getContext();
+		_d=new D(c);_s=new S(c);_x=new X(c);_m=new M(c);_t=new T(c)
 	}
 
-	// [J.execute] 执行JS端发来的操作 ii=操作名称 x=参数 c=回调
+	@Override
 	public boolean execute(String ii,JSONArray x,CallbackContext c)throws JSONException{
 		try{switch(ii){
 			// 配置提醒 - 设置每天提醒时间
