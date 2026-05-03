@@ -28,7 +28,7 @@ public class J extends CordovaPlugin{
 	protected void pluginInitialize(){
 		super.pluginInitialize();
 		Context c=this.cordova.getContext();
-		_d=new D(c);_s=new S(c);_x=new X(c);_m=new M(c);_t=new T(c)
+		_d=new D(c);_s=new S(c);_x=new X(c);_m=new M(c);_t=new T(c);
 	}
 
 	@Override
