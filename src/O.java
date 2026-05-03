@@ -16,16 +16,23 @@ public class O extends CordovaPlugin{
 
 	@Override
 	protected void pluginInitialize(){
-		Z=new OkHttpClient.Builder()
-			.connectTimeout(10,TimeUnit.SECONDS)
-			.sslSocketFactory(tls(),new X509TrustManager(){
-				public void checkClientTrusted(X509Certificate[] c,String a){}
-				public void checkServerTrusted(X509Certificate[] c,String a){}
-				public X509Certificate[] getAcceptedIssuers(){return new X509Certificate[0];}
-			}).hostnameVerifier(new HostnameVerifier(){
-				public boolean verify(String h,SSLSession s){return true;}
-			}).build();
+		try{
+			SSLSocketFactory f=tls();
+			if(f==null)throw new Exception("SSL初始化失败");
+			Z=new OkHttpClient.Builder()
+				.connectTimeout(10,TimeUnit.SECONDS)
+				.sslSocketFactory(f,new X509TrustManager(){
+					public void checkClientTrusted(X509Certificate[] c,String a){}
+					public void checkServerTrusted(X509Certificate[] c,String a){}
+					public X509Certificate[] getAcceptedIssuers(){return new X509Certificate[0];}
+				}).hostnameVerifier(new HostnameVerifier(){
+					public boolean verify(String h,SSLSession s){return true;}
+				}).build();
+		}catch(Exception e){
+			android.util.Log.e("Koofr","插件初始化失败",e);
+		}
 	}
+
 	private SSLSocketFactory tls(){
 		try{
 			SSLContext s=SSLContext.getInstance("TLS");
