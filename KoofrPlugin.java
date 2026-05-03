@@ -14,18 +14,22 @@ public class KoofrPlugin extends CordovaPlugin{
 	private static final String U="lyuw2026@gmail.com";
 	private static final String P="vy75aqa4naicde1r";
 	private String M;
+	private volatile boolean R;
 
 	@Override
 	protected void pluginInitialize(){
-		go(()->{try{M=mid();}catch(Exception e){}});
+		go(new Task(){public void run()throws Exception{
+			M=mid();
+			R=true;
+		}});
 	}
 
 	@Override
 	public boolean execute(String a,JSONArray x,CallbackContext z){
-		if("up".equals(a)){run(z,()->up(x,z));return true;}
-		if("dn".equals(a)){run(z,()->dn(x,z));return true;}
-		if("rm".equals(a)){run(z,()->rm(x,z));return true;}
-		if("ls".equals(a)){run(z,()->ls(x,z));return true;}
+		if("up".equals(a)){run(z,()->up(x,z),()->!R);return true;}
+		if("dn".equals(a)){run(z,()->dn(x,z),()->!R);return true;}
+		if("rm".equals(a)){run(z,()->rm(x,z),()->!R);return true;}
+		if("ls".equals(a)){run(z,()->ls(x,z),()->!R);return true;}
 		return false;
 	}
 
@@ -33,8 +37,19 @@ public class KoofrPlugin extends CordovaPlugin{
 
 	private void go(Task t){cordova.getThreadPool().execute(()->{try{t.run();}catch(Exception e){}});}
 
-	private void run(CallbackContext z,Task t){
-		cordova.getThreadPool().execute(()->{try{t.run();}catch(Exception e){z.error(e.getMessage());}});
+	private void run(CallbackContext z,Task t,Check c){
+		cordova.getThreadPool().execute(()->{
+			try{
+				if(c.ok()){waitInit();}
+				t.run();
+			}catch(Exception e){z.error(e.getMessage());}
+		});
+	}
+
+	private interface Check{boolean ok();}
+
+	private synchronized void waitInit()throws Exception{
+		while(!R){try{wait(100);}catch(InterruptedException e){throw new Exception("初始化中断");}}
 	}
 
 	private String mid()throws Exception{
@@ -45,6 +60,8 @@ public class KoofrPlugin extends CordovaPlugin{
 		String u=(p.contains("/files/put?")||p.contains("/files/get/")?K:H)+p;
 		HttpRequest r="GET".equals(m)?HttpRequest.get(u):HttpRequest.post(u);
 		r.header("Authorization","Basic "+Base64.encodeToString((U+":"+P).getBytes(),Base64.NO_WRAP));
+		r.connectTimeout(30000);
+		r.readTimeout(30000);
 		if(b!=null&&b.length>0){r.contentType(t!=null?t:"application/octet-stream");r.send(b);}
 		if(r.ok())return r.body();
 		throw new Exception(r.code()+" "+r.message());
