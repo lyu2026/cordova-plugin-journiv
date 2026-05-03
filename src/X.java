@@ -18,7 +18,7 @@ public class X{
 	private String block(JSONObject _){
 		StringBuilder o=new StringBuilder();
 		SimpleDateFormat f=new SimpleDateFormat("yyyy/MM/dd HH:mm:ss",Locale.getDefault());
-		f.setTimeZone(J.TZ);
+		f.setTimeZone(J.Z);
 
 		String t=_.optString("title");
 		if(t!=null&&!t.isEmpty())o.append("标题：").append(t).append("\n");

@@ -5,7 +5,6 @@ module.exports={
 	remove:(_,s)=>P('remove',[_,s]),
 	page:(_,p,z)=>P('page',[_||{},p||1,z||20]),
 	one:_=>P('one',[_]),
-	multi:_=>P('multi',[_]),
 	memory:()=>P('memory'),
 	sync:_=>P('sync',[_]),
 	clear:_=>P('clear',[_||0]),

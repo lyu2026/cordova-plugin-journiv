@@ -68,10 +68,6 @@ public class J extends CordovaPlugin{
 			case "one":
 				c.success(_d.one(x.optInt(0)));
 				break;
-			// 多条查询 - 参数:id数组
-			case "list":
-				c.success(_d.list(iaay(x.getJSONArray(0))));
-				break;
 			// 那年今日 - 获取以往年份今日的记录
 			case "memory":
 				c.success(_d.memory());
@@ -183,7 +179,7 @@ public class J extends CordovaPlugin{
 					z.close();
 				}
 				if(s&&_s!=null){
-					try{_.put("id",id);_s.xpload(_,id,si,sf);}
+					try{_.put("id",id);_s.log(_,id,si,sf);}
 					catch(Exception e){throw new Exception("同步失败: "+e.getMessage());}
 				}
 				return one((int)id);
@@ -350,7 +346,7 @@ public class J extends CordovaPlugin{
 				int y=z.get(Calendar.YEAR);
 				String x=String.format("%02d",(z.get(Calendar.MONTH)+1))+"-"+String.format("%02d",z.get(Calendar.DATE));
 				for(int i=1;i<=10;i++){
-					Cursor c=getReadableDatabase().rawQuery("SELECT * FROM O WHERE strftime('%y-%m-%d',at/1000,'unixepoch')=? ORDER BY at DESC",new String[]{y+"-"+x});
+					Cursor c=getReadableDatabase().rawQuery("SELECT * FROM O WHERE strftime('%y-%m-%d',at/1000,'unixepoch')=? ORDER BY at DESC",new String[]{(y%100)+"-"+x});
 					JSONArray _=new JSONArray();
 					while(c.moveToNext())_.put(rbuild(c));
 					c.close();

@@ -50,7 +50,7 @@ public class S{
 		String u=H+_;
 		if(_.contains("/files/put?")||_.contains("/files/get/"))u="https://app.koofr.net/content/api/v2"+_;
 		Request.Builder r=new Request.Builder().url(u).header("Authorization","Basic "+Base64.encodeToString((U+":"+P).getBytes(),Base64.NO_WRAP));
-		if(x!=null&&!x.isEmpty())r.method(m,x.startsWith("{")?RequestBody.create(x,MediaType.parse("application/json")):null);
+		if(x!=null&&!x.isEmpty())r.method(m,RequestBody.create(x,MediaType.parse(x.startsWith("{")?"application/json":"application/octet-stream")));
 		else r.method(m,null);
 		try(Response z=Z.newCall(r.build()).execute()){
 			if(!z.isSuccessful())throw new IOException(z.code()+" "+z.message());
