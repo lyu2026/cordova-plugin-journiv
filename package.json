@@ -1,9 +1,9 @@
 {
-	"name": "cordova-plugin-journiv",
+	"name": "cordova-plugin-koofr",
 	"version": "1.0.0",
-	"description": "仿 Journiv 私密日记 Cordova 插件 - 加密存储、图片、全文搜索、WebDAV同步、提醒、统计、PDF导出",
+	"description": "...",
 	"cordova": {
-		"id": "cordova-plugin-journiv",
+		"id": "cordova-plugin-koofr",
 		"platforms": [
 			"android"
 		]
