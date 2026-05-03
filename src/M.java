@@ -11,22 +11,22 @@ import java.util.*;
 public class M{
 	private Context C; // Android上下文
 	private AlarmManager A; // 闹钟管理器
-	M(Context _){
-		this.C=_;
+	M(Context ii){
+		this.C=ii;
 		this.A=(AlarmManager)C.getSystemService(Context.ALARM_SERVICE);
 	}
 
-	// [M.config] 配置提醒 - _={hour:小时(默认20)}
-	void config(JSONObject _){
+	// [M.config] 配置提醒 - ii={hour:小时(默认20)}
+	void config(JSONObject ii){
 		SharedPreferences p=C.getSharedPreferences("config",Context.MODE_PRIVATE);
-		if(_.has("hour"))p.edit().putInt("hour",_.optInt("hour",20)).apply();
+		if(ii.has("hour"))p.edit().putInt("hour",ii.optInt("hour",20)).apply();
 		set(p.getInt("hour",20));
 	}
 
-	// [M.set] 设置闹钟 - _=小时
-	private void set(int _){
+	// [M.set] 设置闹钟 - ii=小时
+	private void set(int ii){
 		Calendar c=Calendar.getInstance(J.Z); // 使用全局东八区时区
-		c.set(Calendar.HOUR_OF_DAY,_);
+		c.set(Calendar.HOUR_OF_DAY,ii);
 		c.set(Calendar.MINUTE,0);
 		c.set(Calendar.SECOND,0);
 		if(c.getTimeInMillis()<=System.currentTimeMillis())c.add(Calendar.DAY_OF_YEAR,1);

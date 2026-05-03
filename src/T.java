@@ -10,14 +10,14 @@ public class T{
 
 	// 日期格式化 - 使用全局东八区时区
 	private SimpleDateFormat f;
-	T(Context _){
+	T(Context ii){
 		f=new SimpleDateFormat("yyyy-MM-dd",Locale.getDefault());
 		f.setTimeZone(J.Z);
 	}
 
 	// 综合统计 - 返回日记总数、天数、连续天数、图片数、附件数、平均字数、最活跃时段
-	JSONObject summary(J.D _)throws Exception{
-		JSONArray a=_.list(); // 所有记录(不解密)
+	JSONObject summary(J.D ii)throws Exception{
+		JSONArray a=ii.list(); // 所有记录(不解密)
 		int im=0,fi=0,len=0; // 图片数、附件数、总字数
 		Set<String> ds=new HashSet<>(); // 有记录的天数集合
 		Map<Integer,Integer> hh=new HashMap<>(); // 每小时记录数

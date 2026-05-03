@@ -146,10 +146,10 @@ public class S{
 		if(_==null||_.isEmpty()||_.startsWith(X+"/files/"))return _;
 		byte[] b=_.startsWith("http")?fetch(_):cread(_);
 		String[] v=_.split("\\?")[0].split("\\.");
-		String x=v[v.length-1];
+		String x=v[v.length()-1];
 		if(x.contains("/")){
 			v=x.split("/");
-			x=v[v.length-1];
+			x=v[v.length()-1];
 		}
 		x=(x!=null&&!x.isEmpty())?("."+x):"";
 		String o=p+"_"+System.currentTimeMillis()+x;
@@ -167,11 +167,11 @@ public class S{
 			for(int i=0;i<ls.length();i++){
 				JSONObject v=ls.getJSONObject(i);
 				JSONArray si=new JSONArray(v.optString("imgs")),sf=new JSONArray(v.optString("files"));
-				if(si.length>0)for(int j=0;j<si.length;j++){
+				if(si.length()>0)for(int j=0;j<si.length();j++){
 					String n=si.optString(j).replaceFirst(X+"/","");
 					if(os.has(n))os.remove(n);
 				}
-				if(sf.length>0)for(int j=0;j<sf.length;j++){
+				if(sf.length()>0)for(int j=0;j<sf.length();j++){
 					String n=sf.optString(j).replaceFirst(X+"/","");
 					if(os.has(n))os.remove(n);
 				}
@@ -218,7 +218,7 @@ public class S{
 				if(n.startsWith(X+"/files/"))s.put("files/"+n);
 			}
 		}
-		if(s.length>0)try{remove(s);}catch(Exception e){}
+		if(s.length()>0)try{remove(s);}catch(Exception e){}
 		// 上传新图片
 		if(o.has("imgs")&&!o.isNull("imgs")){
 			s=o.getJSONArray("imgs");

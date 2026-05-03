@@ -12,41 +12,41 @@ import java.io.*;
 
 // 导出管理器 - 将日记导出为JSON或PDF文件
 public class X{
-	X(Context _){}
+	X(Context ii){}
 
 	// 将单条记录转为文本块 - 空字段跳过，经纬度同行，情绪标签同行
-	private String block(JSONObject _){
+	private String block(JSONObject ii){
 		StringBuilder o=new StringBuilder();
 		SimpleDateFormat f=new SimpleDateFormat("yyyy/MM/dd HH:mm:ss",Locale.getDefault());
 		f.setTimeZone(J.Z);
 
-		String t=_.optString("title");
+		String t=ii.optString("title");
 		if(t!=null&&!t.isEmpty())o.append("标题：").append(t).append("\n");
-		String c=_.optString("content");
+		String c=ii.optString("content");
 		if(c!=null&&!c.isEmpty())o.append("内容：").append(c).append("\n");
-		String m=_.optString("mood"),g=_.optString("tags");
+		String m=ii.optString("mood"),g=ii.optString("tags");
 		if((m!=null&&!m.isEmpty())||(g!=null&&!g.isEmpty())){
 			o.append("情绪：").append(m!=null?m:"").append("  标签：").append(g!=null?g:"").append("\n");
 		}
-		JSONArray sm=_.optJSONArray("imgs");
+		JSONArray sm=ii.optJSONArray("imgs");
 		if(sm!=null&&sm.length()>0)o.append("图片：").append(sm.toString()).append("\n");
-		JSONArray sf=_.optJSONArray("files");
+		JSONArray sf=ii.optJSONArray("files");
 		if(sf!=null&&sf.length()>0)o.append("附件：").append(sf.toString()).append("\n");
-		double lt=_.optDouble("lat",Double.NaN),ln=_.optDouble("lng",Double.NaN);
+		double lt=ii.optDouble("lat",Double.NaN),ln=ii.optDouble("lng",Double.NaN);
 		if(!Double.isNaN(lt)||!Double.isNaN(ln))o.append("经纬度：").append(lt).append(", ").append(ln).append("\n");
-		String a=_.optString("addr");
+		String a=ii.optString("addr");
 		if(a!=null&&!a.isEmpty())o.append("地址：").append(a).append("\n");
 		try{
-			long ts=Long.parseLong(_.optString("at","0"));
+			long ts=Long.parseLong(ii.optString("at","0"));
 			o.append("时间：").append(f.format(new Date(ts)));
-		}catch(Exception e){o.append("时间：").append(_.optString("at"));}
+		}catch(Exception e){o.append("时间：").append(ii.optString("at"));}
 		return o.toString();
 	}
 
-	// [X.export] 导出 - _=[开始时间戳,结束时间戳](-1表示不限) f=格式(json/pdf)
-	String export(long[] _,String f,J.D _d)throws Exception{
-		JSONArray a=_d.trange(_[0],_[1]);
-		String n=(_[0]==-1?"0":String.valueOf(_[0]))+"-"+(_[1]==-1?String.valueOf(System.currentTimeMillis()):String.valueOf(_[1]));
+	// [X.export] 导出 - ii=[开始时间戳,结束时间戳](-1表示不限) f=格式(json/pdf)
+	String export(long[] ii,String f,J.D _d)throws Exception{
+		JSONArray a=_d.trange(ii[0],ii[1]);
+		String n=(ii[0]==-1?"0":String.valueOf(ii[0]))+"-"+(ii[1]==-1?String.valueOf(System.currentTimeMillis()):String.valueOf(ii[1]));
 		String dir=Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath();
 		String o="";
 		if("json".equals(f)){
