@@ -179,7 +179,7 @@ public class J extends CordovaPlugin{
 					z.close();
 				}
 				if(s&&_s!=null){
-					try{_.put("id",id);_s.log(_,id,si,sf);}
+					try{_.put("id",id);_s.log(id,_,si,sf);}
 					catch(Exception e){throw new Exception("同步失败: "+e.getMessage());}
 				}
 				return one((int)id);

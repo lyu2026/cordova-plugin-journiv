@@ -72,9 +72,12 @@ public class S{
 	}
 
 	// [S.upload] 上传文件
-	JSONObject upload(String _,String p,String x)throws Exception{
-		String o=call("/mounts/"+mid()+"/files/put?path="+java.net.URLEncoder.encode(p,"UTF-8")+"&filename="+java.net.URLEncoder.encode(_,"UTF-8")+"&info=true&overwrite=true","POST",x);
-		return new JSONObject(o);
+	JSONObject upload(String _,String p,byte[] x)throws Exception{
+		String u="https://app.koofr.net/content/api/v2/mounts/"+mid()+"/files/put?path="+java.net.URLEncoder.encode(p,"UTF-8")+"&filename="+java.net.URLEncoder.encode(_,"UTF-8")+"&info=true&overwrite=true";
+		Request r=new Request.Builder().url(u).header("Authorization","Basic "+Base64.encodeToString((U+":"+P).getBytes(),Base64.NO_WRAP)).method("POST",RequestBody.create(x,MediaType.parse("application/octet-stream"))).build();
+		try(Response z=Z.newCall(r).execute()){
+			return new JSONObject(z.body().string());
+		}
 	}
 
 	// [S.download] 下载文件
@@ -150,7 +153,7 @@ public class S{
 		}
 		x=(x!=null&&!x.isEmpty())?("."+x):"";
 		String o=p+"_"+System.currentTimeMillis()+x;
-		JSONObject z=upload(o,X+"/files",new String(b,"ISO-8859-1"));
+		JSONObject z=upload(o,X+"/files",b);
 		return X+"/files/"+z.optString("name",o);
 	}
 
@@ -180,7 +183,7 @@ public class S{
 			if(ns.length()>0)try{remove(ns);tclear();}catch(Exception e){}
 			for(int i=0;i<ls.length();i++){
 				JSONObject v=ls.getJSONObject(i);
-				upload(v.optLong("id",0)+".json",J.encode(v.toString()),X);
+				upload(v.optLong("id",0)+".json",X,J.encode(v.toString()).getBytes("UTF-8"));
 			}
 			return new JSONObject().put("ok",true);
 		}
@@ -231,7 +234,7 @@ public class S{
 			o.put("files",x);
 		}
 		// 上传记录JSON文件
-		upload(_+".json",J.encode(o.toString()),X);
+		upload(_+".json",X,J.encode(o.toString()).getBytes("UTF-8"));
 	}
 
 }
