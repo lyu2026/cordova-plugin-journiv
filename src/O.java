@@ -48,7 +48,7 @@ public class O extends CordovaPlugin{
 						case "dn":dn(x,c);break;
 						case "rm":rm(x,c);break;
 						case "ls":ls(x,c);break;
-						case "cr":cr(c);break;
+						case "cr":cr(x,c);break;
 						default:c.error("未知操作: "+a);
 					}
 				}catch(Exception e){c.error(e.getMessage());}
@@ -124,7 +124,7 @@ public class O extends CordovaPlugin{
 		c.success(new JSONObject(o).optJSONArray("files"));
 	}
 
-	void cr(CallbackContext c)throws Exception{
+	void cr(JSONArray x,CallbackContext c)throws Exception{
 		String p=x.optString(0,"").replaceAll("^/+|/+$","");
 		if(p.isEmpty())p="/";
 		else if(!p.isEmpty())p="/"+p;
