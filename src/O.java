@@ -76,25 +76,36 @@ public class O extends CordovaPlugin{
 	}
 
 	void up(JSONArray x,CallbackContext c)throws Exception{
-		String p=x.getString(0),n=x.getString(1),x=x.getString(2);
-		if(!p.startsWith("/"))p="/"+p;
-		String o=call("/mounts/"+mid()+"/files/put?path="+URLEncoder.encode(p,"UTF-8")+"&filename="+URLEncoder.encode(n,"UTF-8")+"&info=true&overwrite=true","POST",x);
+		String p=x.optString(0,""),n=x.optString(1,""),b=x.optString(2,"");
+		if(n.isEmpty()){
+			c.error("文件名不能为空!");
+			return;
+		}
+		if(p.isEmpty())p="/";
+		else if(!p.isEmpty())p="/"+p;
+		String o=call("/mounts/"+mid()+"/files/put?path="+URLEncoder.encode(p,"UTF-8")+"&filename="+URLEncoder.encode(n,"UTF-8")+"&info=true&overwrite=true","POST",b);
 		c.success(new JSONObject(o));
 	}
 
 	void dn(JSONArray x,CallbackContext c)throws Exception{
-		String p=x.getString(0),n=x.getString(1);
-		if(!p.startsWith("/"))p="/"+p;
+		String p=x.optString(0,"").replaceAll("^/+|/+$",""),n=x.optString(1,"");
+		if(n.isEmpty()){
+			c.error("文件名不能为空!");
+			return;
+		}
+		if(p.isEmpty())p="/";
+		else if(!p.isEmpty())p="/"+p;
 		String o=call("/mounts/"+mid()+"/files/get/"+n+"?path="+URLEncoder.encode(p+"/"+n,"UTF-8")+"&force=true","GET",null);
 		c.success(o);
 	}
 
 	void rm(JSONArray x,CallbackContext c)throws Exception{
 		JSONArray s=x.getJSONArray(1),o=new JSONArray();
-		String p=x.getString(0,"").replaceAll("^/+|/+$",""),m=mid();
-		if(!p.isEmpty())p="/"+p;
+		String p=x.optString(0,"").replaceAll("^/+|/+$",""),m=mid();
+		if(p.isEmpty())p="/";
+		else if(!p.isEmpty())p="/"+p;
 		for(int i=0;i<s.length();i++){
-			String v=s.getString(i).replaceAll("^/+|/+$","");
+			String v=s.optString(i,"").replaceAll("^/+|/+$","");
 			if(v.isEmpty())continue;
 			JSONObject f=new JSONObject();
 			f.put("path",p+"/"+v);
@@ -106,15 +117,17 @@ public class O extends CordovaPlugin{
 	}
 
 	void ls(JSONArray x,CallbackContext c)throws Exception{
-		String p=x.getString(0,"").replaceAll("^/+|/+$","");
+		String p=x.optString(0,"").replaceAll("^/+|/+$","");
 		if(p.isEmpty())p="/";
+		else if(!p.isEmpty())p="/"+p;
 		String o=call("/mounts/"+mid()+"/bundle?path="+URLEncoder.encode(p,"UTF-8"),"GET",null);
 		c.success(new JSONObject(o).optJSONArray("files"));
 	}
 
 	void cr(CallbackContext c)throws Exception{
-		String p=x.getString(0,"").replaceAll("^/+|/+$","");
+		String p=x.optString(0,"").replaceAll("^/+|/+$","");
 		if(p.isEmpty())p="/";
+		else if(!p.isEmpty())p="/"+p;
 		JSONArray xs=new JSONObject(call("/mounts/"+mid()+"/bundle?path="+URLEncoder.encode(p,"UTF-8"),"GET",null)).optJSONArray("files");
 		JSONArray s=new JSONArray();
 		for(int i=0;i<xs.length();i++)s.put(xs.getJSONObject(i).getString("name"));
